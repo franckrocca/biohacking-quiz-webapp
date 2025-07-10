@@ -751,7 +751,7 @@
         const quizConfig = {
             title: "Entrepreneur Augmenté",
             subtitle: "Diagnostique ta marge de progression en biohacking",
-            googleScriptUrl: "https://script.google.com/macros/s/AKfycbw59hgLCSU2a-jLX8ApsZlSkp1jVDKVcV5ALRoHOs5WsANGd2XmeZT-oYC6KC8RobSE/exec",
+            googleScriptUrl: "https://script.google.com/macros/s/TON_SCRIPT_ID_ICI/exec",
             
             // Pages d'accroche (style BetterMe)
             valuePages: [
@@ -1190,7 +1190,7 @@
             return questionDiv;
         }
 
-        // Sélectionner une réponse
+        // Sélectionner une réponse (CORRIGÉE)
         function selectAnswer(element, type) {
             const questionContainer = element.closest('.question-container');
             const questionId = parseInt(questionContainer.id.replace('question', ''));
@@ -1258,20 +1258,36 @@
             updateProgress();
         }
 
-        // Étape suivante
+        // Étape suivante (LOGIQUE CORRIGÉE)
         function nextStep() {
-            // Vérifier si on doit afficher la page intermédiaire
-            if (currentStep === quizConfig.valuePages.length + Math.floor(totalQuestions / 2) - 1) {
-                // Afficher la page d'accroche du milieu si elle existe
-                if (quizConfig.valuePages.length > 1) {
-                    currentStep = quizConfig.valuePages.length - 1; // Page "mid-quiz"
-                    showCurrentStep();
-                    return;
-                }
+            // Si on est sur la première page d'intro, aller directement aux questions
+            if (currentStep === 0) {
+                currentStep = quizConfig.valuePages.length; // Passer aux questions
+                showCurrentStep();
+                return;
             }
             
+            // Si on est sur une page d'accroche intermédiaire, continuer les questions
+            if (currentStep === quizConfig.valuePages.length - 1 && quizConfig.valuePages.length > 1) {
+                currentStep = quizConfig.valuePages.length + Math.floor(totalQuestions / 2);
+                showCurrentStep();
+                return;
+            }
+            
+            // Progression normale
             if (currentStep < totalSteps - 1) {
                 currentStep++;
+                
+                // Vérifier si on doit afficher la page intermédiaire (une seule fois)
+                if (currentStep === quizConfig.valuePages.length + Math.floor(totalQuestions / 2) && quizConfig.valuePages.length > 1) {
+                    // Temporairement afficher la page mid-quiz
+                    const currentContainer = document.querySelector('.value-page.active, .question-container.active');
+                    if (currentContainer) currentContainer.classList.remove('active');
+                    
+                    document.getElementById(`valuePage1`).classList.add('active'); // Page mid-quiz
+                    return;
+                }
+                
                 showCurrentStep();
             }
         }
@@ -1544,12 +1560,12 @@
             `;
         }
 
-        // Recommencer le quiz
+        // Recommencer le quiz (CORRIGÉE)
         function restartQuiz() {
             currentStep = 0;
-            currentQuestion = 1;
             answers = {};
             isSubmitting = false;
+            hasShownMidPage = false; // Reset du flag
             
             // Réinitialiser toutes les sélections
             document.querySelectorAll('.answer-card, .answer-option-text').forEach(option => {
