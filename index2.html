@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entrepreneur Augmenté - Diagnostic Biohacking</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #000324 0%, #001a4a 100%);
+            color: white;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .quiz-header {
+            text-align: center;
+            margin-bottom: 40px;
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        .quiz-title {
+            font-size: 2.8rem;
+            font-weight: 800;
+            margin-bottom: 15px;
+            background: linear-gradient(45deg, #01FF00, #00cc00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .quiz-subtitle {
+            font-size: 1.4rem;
+            opacity: 0.9;
+            margin-bottom: 30px;
+            font-weight: 300;
+        }
+
+        .progress-container {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            height: 8px;
+            border-radius: 20px;
+            overflow: hidden;
+            margin-bottom: 50px;
+            position: relative;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #01FF00, #00cc00);
+            width: 0%;
+            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 20px;
+            box-shadow: 0 0 20px rgba(1, 255, 0, 0.5);
+        }
+
+        .progress-text {
+            position: absolute;
+            top: -30px;
+            right: 0;
+            font-size: 0.9rem;
+            color: #01FF00;
+            font-weight: 600;
+        }
+
+        .question-container {
+            display: none;
+            animation: slideIn 0.6s ease-out;
+            text-align: center;
+        }
+
+        .question-container.active {
+            display: block;
+        }
+
+        .question-header {
+            margin-bottom: 50px;
+        }
+
+        .question-number {
+            font-size: 1rem;
+            color: #01FF00;
+            font-weight: 600;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .question-title {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            line-height: 1.2;
+        }
+
+        .question-subtitle {
+            font-size: 1.1rem;
+            opacity: 0.7;
+            font-weight: 300;
+        }
+
+        /* Style pour questions avec images */
+        .answers-grid-images {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 50px;
+        }
+
+        .answer-card {
+            background: rgba(255, 255, 255, 0.08);
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 0;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+            position: relative;
+            aspect-ratio: 3/4;
+        }
+
+        .answer-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, rgba(1, 255, 0, 0) 0%, rgba(1, 255, 0, 0.1) 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 1;
+        }
+
+        .answer-card:hover::before {
+            opacity: 1;
+        }
+
+        .answer-card:hover {
+            border-color: #01FF00;
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(1, 255, 0, 0.2);
+        }
+
+        .answer-card.selected {
+            border-color: #01FF00;
+            background: rgba(1, 255, 0, 0.15);
+            transform: scale(1.05);
+            box-shadow: 0 15px 35px rgba(1, 255, 0, 0.3);
+        }
+
+        .answer-image {
+            width: 100%;
+            height: 70%;
+            object-fit: cover;
+            border-radius: 16px 16px 0 0;
+        }
+
+        .answer-content {
+            padding: 20px;
+            height: 30%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        .answer-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+            color: white;
+        }
+
+        .answer-description {
+            font-size: 0.95rem;
+            opacity: 0.8;
+            line-height: 1.3;
+        }
+
+        /* Style pour questions texte */
+        .answers-grid-text {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 50px;
+        }
+
+        .answer-option-text {
+            background: rgba(255, 255, 255, 0.06);
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            border-radius: 16px;
+            padding: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+            position: relative;
+            display: flex;
+            align-items: center;
+            min-height: 80px;
+        }
+
+        .answer-option-text:hover {
+            border-color: #01FF00;
+            background: rgba(1, 255, 0, 0.08);
+            transform: translateX(5px);
+        }
+
+        .answer-option-text.selected {
+            border-color: #01FF00;
+            background: rgba(1, 255, 0, 0.12);
+            box-shadow: 0 0 20px rgba(1, 255, 0, 0.3);
+        }
+
+        .checkbox {
+            width: 24px;
+            height: 24px;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            border-radius: 6px;
+            margin-right: 20px;
+            position: relative;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .answer-option-text.selected .checkbox {
+            background: #01FF00;
+            border-color: #01FF00;
+        }
+
+        .checkbox::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #000324;
+            font-weight: bold;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .answer-option-text.selected .checkbox::after {
+            opacity: 1;
+        }
+
+        .answer-text-content {
+            flex: 1;
+        }
+
+        .answer-text-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .answer-text-description {
+            font-size: 0.95rem;
+            opacity: 0.7;
+            line-height: 1.4;
+        }
+
+        /* Navigation */
+        .navigation {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 40px;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #01FF00, #00cc00);
+            color: #000324;
+            border: none;
+            padding: 18px 40px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            min-width: 180px;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(1, 255, 0, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: #01FF00;
+            border: 2px solid #01FF00;
+        }
+
+        .btn-secondary:hover {
+            background: #01FF00;
+            color: #000324;
+        }
+
+        /* Multiple choice indicator */
+        .multiple-choice-indicator {
+            background: rgba(1, 255, 0, 0.1);
+            border: 1px solid #01FF00;
+            border-radius: 20px;
+            padding: 8px 16px;
+            font-size: 0.9rem;
+            color: #01FF00;
+            margin-bottom: 30px;
+            display: inline-block;
+        }
+
+        /* Contact Form */
+        .contact-form {
+            max-width: 500px;
+            margin: 0 auto;
+            text-align: left;
+        }
+
+        .input-group {
+            margin-bottom: 25px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #01FF00;
+            font-size: 1.1rem;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 18px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            color: white;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #01FF00;
+            background: rgba(1, 255, 0, 0.05);
+            box-shadow: 0 0 20px rgba(1, 255, 0, 0.2);
+        }
+
+        .input-group input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        /* Loading */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 80px 20px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top: 4px solid #01FF00;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 30px;
+        }
+
+        .loading-text {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .loading-subtext {
+            font-size: 1rem;
+            opacity: 0.7;
+        }
+
+        /* Results */
+        .results-container {
+            display: none;
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .results-container.active {
+            display: block;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .quiz-title {
+                font-size: 2.2rem;
+            }
+            
+            .question-title {
+                font-size: 1.8rem;
+            }
+            
+            .answers-grid-images {
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                gap: 20px;
+            }
+            
+            .answers-grid-text {
+                grid-template-columns: 1fr;
+            }
+            
+            .answer-card {
+                aspect-ratio: 4/5;
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="quiz-header">
+            <h1 class="quiz-title">Entrepreneur Augmenté</h1>
+            <p class="quiz-subtitle">Diagnostique ta marge de progression en biohacking</p>
+            <div class="progress-container">
+                <div class="progress-bar" id="progressBar"></div>
+                <div class="progress-text" id="progressText">0/10</div>
+            </div>
+        </div>
+
+        <!-- Questions will be dynamically generated here -->
+        <div id="questionsContainer"></div>
+
+        <!-- Contact Form -->
+        <div class="question-container" id="contactForm">
+            <div class="question-header">
+                <div class="question-number">Dernière étape</div>
+                <h2 class="question-title">Obtiens ton diagnostic personnalisé</h2>
+                <p class="question-subtitle">Reçois ton profil complet sous 24h</p>
+            </div>
+            <div class="contact-form">
+                <div class="input-group">
+                    <label for="prenom">Prénom *</label>
+                    <input type="text" id="prenom" name="prenom" placeholder="Ton prénom" required>
+                </div>
+                <div class="input-group">
+                    <label for="email">Email *</label>
+                    <input type="email" id="email" name="email" placeholder="ton@email.com" required>
+                </div>
+                <div class="input-group">
+                    <label for="mobile">Mobile (optionnel)</label>
+                    <input type="tel" id="mobile" name="mobile" placeholder="+33 6 12 34 56 78">
+                </div>
+                <div class="navigation">
+                    <button type="button" class="btn btn-secondary" onclick="previousQuestion()">Retour</button>
+                    <button type="button" class="btn" onclick="submitForm()">Obtenir mon diagnostic</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading -->
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <h2 class="loading-text">Analyse de tes réponses...</h2>
+            <p class="loading-subtext">Calcul de ton profil biohacking personnalisé</p>
+        </div>
+
+        <!-- Results -->
+        <div class="results-container" id="results">
+            <div id="resultsContent"></div>
+            <div class="navigation">
+                <button type="button" class="btn" onclick="restartQuiz()">Recommencer le diagnostic</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration du quiz - FACILE À MODIFIER
+        const quizConfig = {
+            title: "Entrepreneur Augmenté",
+            subtitle: "Diagnostique ta marge de progression en biohacking",
+            googleScriptUrl: "https://script.google.com/macros/s/AKfycbw59hgLCSU2a-jLX8ApsZlSkp1jVDKVcV5ALRoHOs5WsANGd2XmeZT-oYC6KC8RobSE/exec",
+            questions: [
+                {
+                    id: 1,
+                    type: "single_image", // single_image, multiple_text, single_text
+                    title: "Quel est ton âge ?",
+                    subtitle: "Nous adapterons tes recommandations selon ta tranche d'âge",
+                    answers: [
+                        {
+                            value: "18-29",
+                            title: "18-29 ans",
+                            description: "Génération Z entrepreneur",
+                            image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=600&fit=crop&crop=face"
+                        },
+                        {
+                            value: "30-39",
+                            title: "30-39 ans", 
+                            description: "Millénial ambitieux",
+                            image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=600&fit=crop&crop=face"
+                        },
+                        {
+                            value: "40-49",
+                            title: "40-49 ans",
+                            description: "Expérience & vision",
+                            image: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&h=600&fit=crop&crop=face"
+                        },
+                        {
+                            value: "50+",
+                            title: "50+ ans",
+                            description: "Sage & performant",
+                            image: "https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=400&h=600&fit=crop&crop=face"
+                        }
+                    ]
+                },
+                {
+                    id: 2,
+                    type: "multiple_text",
+                    title: "Quelles sont tes motivations pour t'upgrader ?",
+                    subtitle: "Choisis toutes les réponses qui s'appliquent",
+                    answers: [
+                        {
+                            value: "energy",
+                            title: "Avoir plus d'énergie",
+                            description: "Être en forme du matin au soir"
+                        },
+                        {
+                            value: "focus",
+                            title: "Améliorer ma concentration",
+                            description: "Focus laser pour performer"
+                        },
+                        {
+                            value: "stress",
+                            title: "Mieux gérer le stress",
+                            description: "Rester zen sous pression"
+                        },
+                        {
+                            value: "sleep",
+                            title: "Optimiser mon sommeil",
+                            description: "Récupération parfaite"
+                        },
+                        {
+                            value: "performance",
+                            title: "Performer au maximum",
+                            description: "Unleash my potential"
+                        }
+                    ]
+                },
+                {
+                    id: 3,
+                    type: "single_image",
+                    title: "Quel est ton objectif physique ?",
+                    subtitle: "Nous personnaliserons tes protocoles d'entraînement",
+                    answers: [
+                        {
+                            value: "lean",
+                            title: "Être plus sec",
+                            description: "Perdre la graisse, garder le muscle",
+                            image: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=600&fit=crop&crop=face"
+                        },
+                        {
+                            value: "muscle",
+                            title: "Prendre du muscle",
+                            description: "Masse musculaire et force",
+                            image: "https://images.unsplash.com/photo-1583500178690-db7e09b03e7e?w=400&h=600&fit=crop&crop=face"
+                        },
+                        {
+                            value: "athletic",
+                            title: "Être plus athlétique",
+                            description: "Performance et endurance",
+                            image: "https://images.unsplash.com/photo-1594736797933-d0401ba2fe65?w=400&h=600&fit=crop&crop=face"
+                        },
+                        {
+                            value: "maintain",
+                            title: "Maintenir ma forme",
+                            description: "Stabilité et longévité",
+                            image: "https://images.unsplash.com/photo-1506629905607-c47d3a5b3127?w=400&h=600&fit=crop&crop=face"
+                        }
+                    ]
+                },
+                {
+                    id: 4,
+                    type: "single_text",
+                    title: "Comment te sens-tu au réveil ?",
+                    subtitle: "Ton énergie matinale révèle beaucoup sur ta récupération",
+                    answers: [
+                        {
+                            value: "energetic",
+                            title: "Énergique et motivé",
+                            description: "Je saute du lit, prêt à conquérir le monde"
+                        },
+                        {
+                            value: "average",
+                            title: "Moyen, ça va",
+                            description: "Pas mal après un café ou deux"
+                        },
+                        {
+                            value: "tired",
+                            title: "Fatigué",
+                            description: "J'ai du mal à démarrer la journée"
+                        },
+                        {
+                            value: "exhausted",
+                            title: "Épuisé",
+                            description: "Toujours vidé, même après 8h de sommeil"
+                        }
+                    ]
+                },
+                {
+                    id: 5,
+                    type: "single_text",
+                    title: "Ta capacité de concentration au travail ?",
+                    subtitle: "Note-la sur 10",
+                    answers: [
+                        {
+                            value: "9-10",
+                            title: "9-10/10 - Focus de ninja",
+                            description: "Concentration parfaite pendant des heures"
+                        },
+                        {
+                            value: "7-8",
+                            title: "7-8/10 - Plutôt bon",
+                            description: "Quelques distractions mais ça va"
+                        },
+                        {
+                            value: "5-6",
+                            title: "5-6/10 - Variable",
+                            description: "Dépend des jours et de mon état"
+                        },
+                        {
+                            value: "1-4",
+                            title: "1-4/10 - Difficile",
+                            description: "Papillonnage mental constant"
+                        }
+                    ]
+                },
+                {
+                    id: 6,
+                    type: "single_text",
+                    title: "Ton niveau de stress moyen ?",
+                    subtitle: "Le stress chronique nuit à toutes tes performances",
+                    answers: [
+                        {
+                            value: "low",
+                            title: "Faible - Zen master",
+                            description: "Je gère, rien ne m'atteint"
+                        },
+                        {
+                            value: "medium",
+                            title: "Modéré - Ça va",
+                            description: "Gérable la plupart du temps"
+                        },
+                        {
+                            value: "high",
+                            title: "Élevé - Sous pression",
+                            description: "Souvent stressé par le travail"
+                        },
+                        {
+                            value: "extreme",
+                            title: "Extrême - Burnout",
+                            description: "À bout, besoin d'aide"
+                        }
+                    ]
+                },
+                {
+                    id: 7,
+                    type: "single_text",
+                    title: "Ta routine sportive actuelle ?",
+                    subtitle: "L'activité physique optimise toute ta biologie",
+                    answers: [
+                        {
+                            value: "regular",
+                            title: "Régulière - 4-6x/semaine",
+                            description: "Sport intégré dans mon lifestyle"
+                        },
+                        {
+                            value: "occasional",
+                            title: "Occasionnelle - 2-3x/semaine",
+                            description: "J'essaie de m'y tenir"
+                        },
+                        {
+                            value: "rare",
+                            title: "Rare - 1x/semaine max",
+                            description: "Manque de temps/motivation"
+                        },
+                        {
+                            value: "none",
+                            title: "Inexistante",
+                            description: "Pas de sport régulier"
+                        }
+                    ]
+                },
+                {
+                    id: 8,
+                    type: "single_text",
+                    title: "Combien investis-tu par an dans ton développement perso ?",
+                    subtitle: "Formation, coaching, biohacking, suppléments...",
+                    answers: [
+                        {
+                            value: "20k+",
+                            title: "20k€+ - Investisseur premium",
+                            description: "Je ne lésine pas sur ma performance"
+                        },
+                        {
+                            value: "10-20k",
+                            title: "10-20k€ - Sérieux",
+                            description: "Budget conséquent pour m'améliorer"
+                        },
+                        {
+                            value: "3-10k",
+                            title: "3-10k€ - Modéré",
+                            description: "Quelques investissements ciblés"
+                        },
+                        {
+                            value: "0-3k",
+                            title: "0-3k€ - Minimaliste",
+                            description: "Budget serré ou pas convaincu"
+                        }
+                    ]
+                },
+                {
+                    id: 9,
+                    type: "multiple_text",
+                    title: "Quels outils de tracking utilises-tu ?",
+                    subtitle: "Choisis tous ceux que tu utilises régulièrement",
+                    answers: [
+                        {
+                            value: "whoop",
+                            title: "Whoop",
+                            description: "HRV, récupération, strain"
+                        },
+                        {
+                            value: "oura",
+                            title: "Oura Ring",
+                            description: "Sommeil, température, HRV"
+                        },
+                        {
+                            value: "apple_watch",
+                            title: "Apple Watch / Smartwatch",
+                            description: "Activité, fréquence cardiaque"
+                        },
+                        {
+                            value: "bloodwork",
+                            title: "Analyses sanguines",
+                            description: "Biomarqueurs réguliers"
+                        },
+                        {
+                            value: "sleep_tracking",
+                            title: "Tracking sommeil",
+                            description: "Apps ou devices spécialisés"
+                        },
+                        {
+                            value: "none",
+                            title: "Aucun tracking",
+                            description: "Je me fie à mes sensations"
+                        }
+                    ]
+                },
+                {
+                    id: 10,
+                    type: "single_text",
+                    title: "Si tu pouvais avoir UN super-pouvoir entrepreneurial ?",
+                    subtitle: "Qu'est-ce qui transformerait le plus ta performance",
+                    answers: [
+                        {
+                            value: "unlimited_energy",
+                            title: "Énergie illimitée",
+                            description: "Plus jamais fatigué, toujours à 100%"
+                        },
+                        {
+                            value: "perfect_focus",
+                            title: "Focus parfait",
+                            description: "Concentration laser sans distraction"
+                        },
+                        {
+                            value: "instant_recovery",
+                            title: "Récupération instantanée",
+                            description: "Rechargé en 2h de sommeil"
+                        },
+                        {
+                            value: "stress_immunity",
+                            title: "Immunité au stress",
+                            description: "Sérénité absolue en toute situation"
+                        }
+                    ]
+                }
+            ]
+        };
+
+        // Variables globales
+        let currentQuestion = 1;
+        let totalQuestions = quizConfig.questions.length;
+        let answers = {};
+        let isSubmitting = false;
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', function() {
+            generateQuestions();
+            updateProgress();
+            showQuestion(1);
+        });
+
+        // Générer toutes les questions
+        function generateQuestions() {
+            const container = document.getElementById('questionsContainer');
+            
+            quizConfig.questions.forEach(question => {
+                const questionElement = createQuestionElement(question);
+                container.appendChild(questionElement);
+            });
+        }
+
+        // Créer un élément question
+        function createQuestionElement(question) {
+            const questionDiv = document.createElement('div');
+            questionDiv.className = 'question-container';
+            questionDiv.id = `question${question.id}`;
+
+            let answersHTML = '';
+            let multipleIndicator = '';
+
+            if (question.type === 'multiple_text') {
+                multipleIndicator = '<div class="multiple-choice-indicator">✓ Plusieurs choix possibles</div>';
+            }
+
+            // Générer les réponses selon le type
+            if (question.type === 'single_image') {
+                answersHTML = `<div class="answers-grid-images">`;
+                question.answers.forEach(answer => {
+                    answersHTML += `
+                        <div class="answer-card" data-value="${answer.value}" onclick="selectAnswer(this, 'single')">
+                            <img src="${answer.image}" alt="${answer.title}" class="answer-image" />
+                            <div class="answer-content">
+                                <div class="answer-title">${answer.title}</div>
+                                <div class="answer-description">${answer.description}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+                answersHTML += `</div>`;
+            } else {
+                // Questions texte (single ou multiple)
+                answersHTML = `<div class="answers-grid-text">`;
+                question.answers.forEach(answer => {
+                    const clickHandler = question.type === 'multiple_text' ? 'multiple' : 'single';
+                    answersHTML += `
+                        <div class="answer-option-text" data-value="${answer.value}" onclick="selectAnswer(this, '${clickHandler}')">
+                            <div class="checkbox"></div>
+                            <div class="answer-text-content">
+                                <div class="answer-text-title">${answer.title}</div>
+                                <div class="answer-text-description">${answer.description}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+                answersHTML += `</div>`;
+            }
+
+            questionDiv.innerHTML = `
+                <div class="question-header">
+                    <div class="question-number">Question ${question.id}/${totalQuestions}</div>
+                    <h2 class="question-title">${question.title}</h2>
+                    <p class="question-subtitle">${question.subtitle}</p>
+                    ${multipleIndicator}
+                </div>
+                ${answersHTML}
+                <div class="navigation" style="display: none;">
+                    <button type="button" class="btn btn-secondary" onclick="previousQuestion()" ${question.id === 1 ? 'style="visibility: hidden;"' : ''}>Précédent</button>
+                    <button type="button" class="btn" onclick="nextQuestion()" id="nextBtn${question.id}">Suivant</button>
+                </div>
+            `;
+
+            return questionDiv;
+        }
+
+        // Sélectionner une réponse
+        function selectAnswer(element, type) {
+            const questionContainer = element.closest('.question-container');
+            const questionId = parseInt(questionContainer.id.replace('question', ''));
+            
+            if (type === 'single') {
+                // Désélectionner toutes les autres réponses
+                questionContainer.querySelectorAll('.answer-card, .answer-option-text').forEach(option => {
+                    option.classList.remove('selected');
+                });
+                
+                // Sélectionner la réponse actuelle
+                element.classList.add('selected');
+                
+                // Sauvegarder la réponse
+                answers[`question${questionId}`] = element.dataset.value;
+                
+                // Animation et passage automatique
+                setTimeout(() => {
+                    if (questionId < totalQuestions) {
+                        nextQuestion();
+                    } else {
+                        showContactForm();
+                    }
+                }, 600);
+                
+            } else if (type === 'multiple') {
+                // Toggle selection pour choix multiples
+                element.classList.toggle('selected');
+                
+                // Collecter toutes les réponses sélectionnées
+                const selectedAnswers = [];
+                questionContainer.querySelectorAll('.answer-option-text.selected').forEach(selected => {
+                    selectedAnswers.push(selected.dataset.value);
+                });
+                
+                answers[`question${questionId}`] = selectedAnswers;
+                
+                // Afficher le bouton suivant si au moins une réponse sélectionnée
+                const navButtons = questionContainer.querySelector('.navigation');
+                if (selectedAnswers.length > 0) {
+                    navButtons.style.display = 'flex';
+                } else {
+                    navButtons.style.display = 'none';
+                }
+            }
+        }
+
+        // Afficher une question
+        function showQuestion(questionNumber) {
+            // Masquer toutes les questions
+            document.querySelectorAll('.question-container').forEach(container => {
+                container.classList.remove('active');
+            });
+            
+            // Afficher la question demandée
+            const targetQuestion = document.getElementById(`question${questionNumber}`);
+            if (targetQuestion) {
+                targetQuestion.classList.add('active');
+                currentQuestion = questionNumber;
+                updateProgress();
+            }
+        }
+
+        // Question suivante
+        function nextQuestion() {
+            if (currentQuestion < totalQuestions) {
+                showQuestion(currentQuestion + 1);
+            } else {
+                showContactForm();
+            }
+        }
+
+        // Question précédente
+        function previousQuestion() {
+            if (currentQuestion > 1) {
+                showQuestion(currentQuestion - 1);
+            }
+        }
+
+        // Afficher le formulaire de contact
+        function showContactForm() {
+            document.querySelectorAll('.question-container').forEach(container => {
+                container.classList.remove('active');
+            });
+            document.getElementById('contactForm').classList.add('active');
+            
+            // Mettre à jour la progress bar
+            document.getElementById('progressBar').style.width = '100%';
+            document.getElementById('progressText').textContent = `${totalQuestions}/${totalQuestions}`;
+        }
+
+        // Mettre à jour la barre de progression
+        function updateProgress() {
+            const progress = (currentQuestion / totalQuestions) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+            document.getElementById('progressText').textContent = `${currentQuestion}/${totalQuestions}`;
+        }
+
+        // Soumettre le formulaire
+        async function submitForm() {
+            if (isSubmitting) return;
+            
+            const prenom = document.getElementById('prenom').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const mobile = document.getElementById('mobile').value.trim();
+            
+            if (!prenom || !email) {
+                alert('Merci de remplir au minimum ton prénom et email');
+                return;
+            }
+            
+            if (!isValidEmail(email)) {
+                alert('Merci de saisir un email valide');
+                return;
+            }
+            
+            isSubmitting = true;
+            
+            // Masquer le formulaire et afficher le loading
+            document.getElementById('contactForm').classList.remove('active');
+            document.getElementById('loading').classList.add('active');
+            
+            // Préparer les données
+            const formData = {
+                prenom: prenom,
+                email: email,
+                mobile: mobile,
+                answers: answers,
+                timestamp: new Date().toISOString(),
+                userAgent: navigator.userAgent,
+                score: calculateScore(answers)
+            };
+            
+            try {
+                // Envoyer vers Google Sheets
+                await sendToGoogleSheets(formData);
+                
+                // Calculer et afficher les résultats
+                setTimeout(() => {
+                    showResults(formData);
+                }, 2500);
+                
+            } catch (error) {
+                console.error('Erreur lors de l\'envoi:', error);
+                alert('Une erreur est survenue. Merci de réessayer.');
+                document.getElementById('loading').classList.remove('active');
+                document.getElementById('contactForm').classList.add('active');
+                isSubmitting = false;
+            }
+        }
+
+        // Validation email
+        function isValidEmail(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        }
+
+        // Envoyer vers Google Sheets
+        async function sendToGoogleSheets(data) {
+            try {
+                const response = await fetch(quizConfig.googleScriptUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data),
+                    mode: 'no-cors'
+                });
+                
+                console.log('Données envoyées vers Google Sheets');
+                return { success: true };
+                
+            } catch (error) {
+                console.error('Erreur envoi:', error);
+                console.log('Données à sauvegarder:', data);
+                return { success: true };
+            }
+        }
+
+        // Calculer le score
+        function calculateScore(answers) {
+            let score = 0;
+            
+            // Énergie matinale (Q4)
+            if (answers.question4 === 'energetic') score += 25;
+            else if (answers.question4 === 'average') score += 15;
+            else if (answers.question4 === 'tired') score += 8;
+            else if (answers.question4 === 'exhausted') score += 2;
+            
+            // Concentration (Q5)
+            if (answers.question5 === '9-10') score += 25;
+            else if (answers.question5 === '7-8') score += 18;
+            else if (answers.question5 === '5-6') score += 10;
+            else if (answers.question5 === '1-4') score += 3;
+            
+            // Stress (Q6)
+            if (answers.question6 === 'low') score += 20;
+            else if (answers.question6 === 'medium') score += 12;
+            else if (answers.question6 === 'high') score += 6;
+            else if (answers.question6 === 'extreme') score += 1;
+            
+            // Sport (Q7)
+            if (answers.question7 === 'regular') score += 20;
+            else if (answers.question7 === 'occasional') score += 12;
+            else if (answers.question7 === 'rare') score += 5;
+            else if (answers.question7 === 'none') score += 0;
+            
+            // Investissement (Q8)
+            if (answers.question8 === '20k+') score += 10;
+            else if (answers.question8 === '10-20k') score += 8;
+            else if (answers.question8 === '3-10k') score += 5;
+            else if (answers.question8 === '0-3k') score += 2;
+            
+            return Math.min(score, 100);
+        }
+
+        // Afficher les résultats
+        function showResults(userData) {
+            document.getElementById('loading').classList.remove('active');
+            
+            const resultContent = generatePersonalizedResult(userData);
+            document.getElementById('resultsContent').innerHTML = resultContent;
+            document.getElementById('results').classList.add('active');
+        }
+
+        // Générer un résultat personnalisé
+        function generatePersonalizedResult(userData) {
+            const { prenom, answers, score } = userData;
+            
+            let profileType = '';
+            let recommendations = [];
+            let nextSteps = [];
+            
+            if (score >= 80) {
+                profileType = 'ÉLITE PERFORMER 🏆';
+                recommendations = [
+                    'Optimisation avancée avec HRV tracking',
+                    'Protocoles de biohacking premium (froid, hypoxie)',
+                    'Fine-tuning hormonal et micronutriments'
+                ];
+                nextSteps = [
+                    'Accès VIP à la communauté Elite',
+                    'Coaching 1-on-1 haute performance',
+                    'Protocoles exclusifs (valeur 2497€)'
+                ];
+            } else if (score >= 60) {
+                profileType = 'ENTREPRENEUR OPTIMISÉ ⚡';
+                recommendations = [
+                    'Affinage des routines existantes',
+                    'Introduction du cold therapy',
+                    'Optimisation nutritionnelle ciblée'
+                ];
+                nextSteps = [
+                    'Programme Entrepreneur+ (12 semaines)',
+                    'Groupe mastermind mensuel',
+                    'Outils de tracking avancés'
+                ];
+            } else if (score >= 40) {
+                profileType = 'POTENTIEL À DÉBLOQUER 🚀';
+                recommendations = [
+                    'Restructuration complète du sommeil',
+                    'Mise en place routine matinale puissante',
+                    'Gestion du stress prioritaire'
+                ];
+                nextSteps = [
+                    'Bootcamp Transformation (8 semaines)',
+                    'Coaching hebdomadaire',
+                    'Reset biologique complet'
+                ];
+            } else {
+                profileType = 'TRANSFORMATION URGENTE 🆘';
+                recommendations = [
+                    'Reset total du mode de vie',
+                    'Accompagnement médical recommandé',
+                    'Protocole de récupération intensif'
+                ];
+                nextSteps = [
+                    'Programme Renaissance (16 semaines)',
+                    'Suivi médical partenaire',
+                    'Transformation 360° garantie'
+                ];
+            }
+            
+            return `
+                <div style="text-align: left; max-width: 700px; margin: 0 auto;">
+                    <div style="text-align: center; margin-bottom: 40px;">
+                        <h2 style="font-size: 2.2rem; color: #01FF00; margin-bottom: 10px;">Salut ${prenom} ! 👋</h2>
+                        <p style="font-size: 1.1rem; opacity: 0.8;">Voici ton diagnostic complet</p>
+                    </div>
+                    
+                    <div style="background: linear-gradient(135deg, rgba(1, 255, 0, 0.15), rgba(1, 255, 0, 0.05)); border: 2px solid #01FF00; border-radius: 20px; padding: 30px; margin-bottom: 30px; text-align: center;">
+                        <h3 style="font-size: 1.8rem; margin-bottom: 15px; color: #01FF00;">${profileType}</h3>
+                        <div style="display: flex; align-items: center; justify-content: center; gap: 20px; margin-bottom: 20px;">
+                            <span style="font-size: 1.2rem;">Score de performance :</span>
+                            <span style="font-size: 2rem; font-weight: bold; color: #01FF00;">${score}/100</span>
+                        </div>
+                        <div style="width: 100%; height: 12px; background: rgba(255,255,255,0.1); border-radius: 6px; overflow: hidden; margin-bottom: 15px;">
+                            <div style="width: ${score}%; height: 100%; background: linear-gradient(90deg, #01FF00, #00cc00); border-radius: 6px; transition: width 2s ease;"></div>
+                        </div>
+                        <p style="font-style: italic; opacity: 0.9;">Basé sur tes réponses et notre algorithme propriétaire</p>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-bottom: 30px;">
+                        <div style="background: rgba(255, 255, 255, 0.06); border-radius: 16px; padding: 25px;">
+                            <h4 style="color: #01FF00; margin-bottom: 15px; font-size: 1.3rem;">🎯 Tes axes prioritaires</h4>
+                            ${recommendations.map(rec => `<p style="margin-bottom: 8px; padding-left: 15px; position: relative;"><span style="position: absolute; left: 0; color: #01FF00;">•</span> ${rec}</p>`).join('')}
+                        </div>
+                        
+                        <div style="background: rgba(255, 255, 255, 0.06); border-radius: 16px; padding: 25px;">
+                            <h4 style="color: #01FF00; margin-bottom: 15px; font-size: 1.3rem;">🚀 Tes prochaines étapes</h4>
+                            ${nextSteps.map(step => `<p style="margin-bottom: 8px; padding-left: 15px; position: relative;"><span style="position: absolute; left: 0; color: #01FF00;">✓</span> ${step}</p>`).join('')}
+                        </div>
+                    </div>
+                    
+                    <div style="background: rgba(1, 255, 0, 0.08); border: 1px solid rgba(1, 255, 0, 0.3); border-radius: 16px; padding: 25px; text-align: center;">
+                        <h4 style="color: #01FF00; margin-bottom: 15px; font-size: 1.4rem;">🎁 Ce qui t'attend maintenant</h4>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                            <div>✅ Rapport détaillé (24h)</div>
+                            <div>✅ Protocole personnalisé (30j)</div>
+                            <div>✅ Communauté privée</div>
+                            <div>✅ Session stratégie offerte</div>
+                        </div>
+                        <p style="font-size: 1.1rem; font-weight: 600; color: #01FF00; margin-top: 20px;">
+                            Surveille ta boîte mail - Ton upgrade commence maintenant ! 🔥
+                        </p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Recommencer le quiz
+        function restartQuiz() {
+            currentQuestion = 1;
+            answers = {};
+            isSubmitting = false;
+            
+            // Réinitialiser toutes les sélections
+            document.querySelectorAll('.answer-card, .answer-option-text').forEach(option => {
+                option.classList.remove('selected');
+            });
+            
+            // Masquer navigations des questions multiples
+            document.querySelectorAll('.question-container .navigation').forEach(nav => {
+                nav.style.display = 'none';
+            });
+            
+            // Cacher tous les containers
+            document.querySelectorAll('.question-container, .loading, .results-container').forEach(container => {
+                container.classList.remove('active');
+            });
+            
+            // Afficher la première question
+            showQuestion(1);
+            
+            // Réinitialiser le formulaire
+            document.getElementById('prenom').value = '';
+            document.getElementById('email').value = '';
+            document.getElementById('mobile').value = '';
+        }
+
+        // Gestion du clavier
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                const activeContainer = document.querySelector('.question-container.active');
+                if (activeContainer && activeContainer.id === 'contactForm') {
+                    submitForm();
+                }
+            }
+        });
+
+        // Analytics tracking (optionnel)
+        function trackEvent(eventName, data = {}) {
+            // Google Analytics
+            if (typeof gtag !== 'undefined') {
+                gtag('event', eventName, data);
+            }
+            
+            // Facebook Pixel
+            if (typeof fbq !== 'undefined') {
+                fbq('track', eventName, data);
+            }
+            
+            console.log('Event tracked:', eventName, data);
+        }
+
+        // Mise à jour du titre de la page
+        document.title = `${quizConfig.title} - Question ${currentQuestion}/${totalQuestions}`;
+    </script>
+</body>
+</html>
