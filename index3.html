@@ -215,32 +215,35 @@
             line-height: 1.3;
         }
 
-        /* Style pour questions texte */
+        /* Style pour questions texte (STYLE BETTERME VERTICAL) */
         .answers-grid-text {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
             margin-bottom: 50px;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         .answer-option-text {
             background: rgba(255, 255, 255, 0.06);
             border: 2px solid rgba(255, 255, 255, 0.15);
             border-radius: 16px;
-            padding: 25px;
+            padding: 20px 25px;
             cursor: pointer;
             transition: all 0.3s ease;
             text-align: left;
             position: relative;
             display: flex;
             align-items: center;
-            min-height: 80px;
+            min-height: 70px;
         }
 
         .answer-option-text:hover {
             border-color: #01FF00;
             background: rgba(1, 255, 0, 0.08);
-            transform: translateX(5px);
+            transform: translateX(3px);
         }
 
         .answer-option-text.selected {
@@ -250,10 +253,10 @@
         }
 
         .checkbox {
-            width: 24px;
-            height: 24px;
+            width: 20px;
+            height: 20px;
             border: 2px solid rgba(255, 255, 255, 0.4);
-            border-radius: 6px;
+            border-radius: 50%; /* Style radio button BetterMe */
             margin-right: 20px;
             position: relative;
             transition: all 0.3s ease;
@@ -273,7 +276,7 @@
             transform: translate(-50%, -50%);
             color: #000324;
             font-weight: bold;
-            font-size: 14px;
+            font-size: 12px;
             opacity: 0;
             transition: opacity 0.2s ease;
         }
@@ -287,15 +290,16 @@
         }
 
         .answer-text-title {
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             font-weight: 600;
             margin-bottom: 5px;
+            line-height: 1.3;
         }
 
         .answer-text-description {
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             opacity: 0.7;
-            line-height: 1.4;
+            line-height: 1.3;
         }
 
         /* Style pour pages d'accroche */
@@ -642,7 +646,13 @@
             }
             
             .answers-grid-text {
-                grid-template-columns: 1fr;
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .answer-option-text {
+                padding: 18px 20px;
+                min-height: 60px;
             }
 
             .results-grid {
