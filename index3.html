@@ -1,0 +1,416 @@
+/**
+ * Google Apps Script pour recevoir les données du quiz biohacking V2.1
+ * Correction du problème des choix multiples
+ */
+
+// Configuration
+const SHEET_ID = '1ABC123DEF456...'; // REMPLACE PAR TON VRAI ID GOOGLE SHEET
+const SHEET_NAME = 'Réponses Quiz';
+
+function doPost(e) {
+  try {
+    const data = JSON.parse(e.postData.contents);
+    console.log('Données reçues:', data);
+    
+    const spreadsheet = SpreadsheetApp.openById(SHEET_ID);
+    let sheet = spreadsheet.getSheetByName(SHEET_NAME);
+    
+    if (!sheet) {
+      sheet = spreadsheet.insertSheet(SHEET_NAME);
+      initializeHeaders(sheet);
+    }
+    
+    addDataToSheet(sheet, data);
+    
+    return ContentService
+      .createTextOutput(JSON.stringify({
+        success: true,
+        message: 'Données sauvegardées avec succès',
+        timestamp: new Date().toISOString()
+      }))
+      .setMimeType(ContentService.MimeType.JSON);
+      
+  } catch (error) {
+    console.error('Erreur:', error);
+    
+    return ContentService
+      .createTextOutput(JSON.stringify({
+        success: false,
+        error: error.toString(),
+        timestamp: new Date().toISOString()
+      }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function doGet(e) {
+  return ContentService
+    .createTextOutput('Quiz Biohacking API V2.1 - Opérationnel ✅')
+    .setMimeType(ContentService.MimeType.TEXT);
+}
+
+function initializeHeaders(sheet) {
+  const headers = [
+    'Timestamp',
+    'Prénom', 
+    'Email',
+    'Mobile',
+    'Score Total',
+    'Profil Type',
+    'Q1: Âge',
+    'Q2: Motivations (choix multiples)',
+    'Q3: Objectif Physique',
+    'Q4: Énergie Matinale',
+    'Q5: Concentration (/10)',
+    'Q6: Niveau Stress',
+    'Q7: Routine Sport',
+    'Q8: Investissement/An',
+    'Q9: Outils Tracking (choix multiples)',
+    'Q10: Super-Pouvoir',
+    'User Agent',
+    'Réponses JSON Complètes'
+  ];
+  
+  sheet.getRange(1, 1, 1, headers.length)
+    .setValues([headers])
+    .setFontWeight('bold')
+    .setBackground('#000324')
+    .setFontColor('#01FF00');
+}
+
+function addDataToSheet(sheet, data) {
+  const score = data.score || calculateScore(data);
+  const profile = getProfileType(score);
+  
+  const row = [
+    new Date(),
+    data.prenom || '',
+    data.email || '',
+    data.mobile || '',
+    score,
+    profile,
+    data.question1 || '',
+    data.question2 || '', // Déjà formaté côté client
+    data.question3 || '',
+    data.question4 || '',
+    data.question5 || '',
+    data.question6 || '',
+    data.question7 || '',
+    data.question8 || '',
+    data.question9 || '', // Déjà formaté côté client
+    data.question10 || '',
+    data.userAgent || '',
+    data.answersJson || ''
+  ];
+  
+  sheet.appendRow(row);
+  sheet.autoResizeColumns(1, row.length);
+}
+
+function calculateScore(data) {
+  let score = 0;
+  
+  // Énergie matinale (25 points max)
+  switch(data.question4) {
+    case 'energetic': score += 25; break;
+    case 'average': score += 15; break;
+    case 'tired': score += 8; break;
+    case 'exhausted': score += 2; break;
+  }
+  
+  // Concentration (25 points max)
+  switch(data.question5) {
+    case '9-10': score += 25; break;
+    case '7-8': score += 18; break;
+    case '5-6': score += 10; break;
+    case '1-4': score += 3; break;
+  }
+  
+  // Stress (20 points max)
+  switch(data.question6) {
+    case 'low': score += 20; break;
+    case 'medium': score += 12; break;
+    case 'high': score += 6; break;
+    case 'extreme': score += 1; break;
+  }
+  
+  // Sport (20 points max)
+  switch(data.question7) {
+    case 'regular': score += 20; break;
+    case 'occasional': score += 12; break;
+    case 'rare': score += 5; break;
+    case 'none': score += 0; break;
+  }
+  
+  // Investissement (10 points max)
+  switch(data.question8) {
+    case '20k+': score += 10; break;
+    case '10-20k': score += 8; break;
+    case '3-10k': score += 5; break;
+    case '0-3k': score += 2; break;
+  }
+  
+  return Math.min(score, 100);
+}
+
+function getProfileType(score) {
+  if (score >= 80) return 'ÉLITE PERFORMER';
+  if (score >= 60) return 'ENTREPRENEUR OPTIMISÉ';
+  if (score >= 40) return 'POTENTIEL À DÉBLOQUER';
+  return 'TRANSFORMATION URGENTE';
+}
+
+// Fonction pour tester le script
+function testScript() {
+  const testData = {
+    prenom: 'Test',
+    email: 'test@example.com',
+    mobile: '+33612345678',
+    question1: '30-39',
+    question2: 'energy, focus, performance', // Choix multiples formatés
+    question3: 'muscle',
+    question4: 'energetic',
+    question5: '9-10',
+    question6: 'low',
+    question7: 'regular',
+    question8: '10-20k',
+    question9: 'whoop, oura, apple_watch', // Choix multiples formatés
+    question10: 'unlimited_energy',
+    timestamp: new Date().toISOString(),
+    userAgent: 'Test Browser'
+  };
+  
+  console.log('Test data:', testData);
+  console.log('Score calculé:', calculateScore(testData));
+  console.log('Profil:', getProfileType(calculateScore(testData)));
+}
+
+// Fonction utilitaire pour créer un nouveau Google Sheet
+function createNewSheet() {
+  const sheet = SpreadsheetApp.create('Quiz Biohacking V2.1 - Réponses');
+  console.log('Nouveau Google Sheet créé:', sheet.getUrl());
+  console.log('ID du Sheet:', sheet.getId());
+  return sheet.getId();
+}/**
+ * Google Apps Script pour recevoir les données du quiz biohacking
+ * Sauvegarde automatique dans Google Sheets
+ */
+
+// Configuration
+const SHEET_ID = '1ABC123DEF456...'; // REMPLACE PAR TON VRAI ID GOOGLE SHEET
+const SHEET_NAME = 'Réponses Quiz'; // Nom de l'onglet
+
+function doPost(e) {
+  try {
+    // Headers CORS pour permettre les requêtes depuis ton site
+    const output = ContentService.createTextOutput();
+    
+    // Parse des données reçues
+    const data = JSON.parse(e.postData.contents);
+    console.log('Données reçues:', data);
+    
+    // Ouvrir le Google Sheet
+    const spreadsheet = SpreadsheetApp.openById(SHEET_ID);
+    let sheet = spreadsheet.getSheetByName(SHEET_NAME);
+    
+    // Créer l'onglet s'il n'existe pas
+    if (!sheet) {
+      sheet = spreadsheet.insertSheet(SHEET_NAME);
+      initializeHeaders(sheet);
+    }
+    
+    // Ajouter les données
+    addDataToSheet(sheet, data);
+    
+    // Réponse de succès
+    return output
+      .setContent(JSON.stringify({
+        success: true,
+        message: 'Données sauvegardées avec succès',
+        timestamp: new Date().toISOString()
+      }))
+      .setMimeType(ContentService.MimeType.JSON);
+      
+  } catch (error) {
+    console.error('Erreur:', error);
+    
+    return ContentService
+      .createTextOutput(JSON.stringify({
+        success: false,
+        error: error.toString(),
+        timestamp: new Date().toISOString()
+      }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function doGet(e) {
+  // Pour tester que le script fonctionne
+  return ContentService
+    .createTextOutput('Quiz Biohacking API - Opérationnel ✅')
+    .setMimeType(ContentService.MimeType.TEXT);
+}
+
+function initializeHeaders(sheet) {
+  const headers = [
+    'Timestamp',
+    'Prénom', 
+    'Email',
+    'Mobile',
+    'Âge',
+    'Énergie Matinale',
+    'Concentration (/10)',
+    'Qualité Sommeil',
+    'Routine Sport',
+    'Niveau Stress',
+    'Fréquence Écarts',
+    'Hydratation',
+    'Investissement/An',
+    'Super-Pouvoir',
+    'Score Total',
+    'Profil Type',
+    'User Agent',
+    'Réponses Complètes (JSON)'
+  ];
+  
+  sheet.getRange(1, 1, 1, headers.length)
+    .setValues([headers])
+    .setFontWeight('bold')
+    .setBackground('#000324')
+    .setFontColor('#01FF00');
+}
+
+function addDataToSheet(sheet, data) {
+  const answers = data.answers || {};
+  const score = calculateScore(answers);
+  const profile = getProfileType(score);
+  
+  const row = [
+    new Date(),
+    data.prenom || '',
+    data.email || '',
+    data.mobile || '',
+    answers.question1 || '',
+    answers.question2 || '',
+    answers.question3 || '',
+    answers.question4 || '',
+    answers.question5 || '',
+    answers.question6 || '',
+    answers.question7 || '',
+    answers.question8 || '',
+    answers.question9 || '',
+    answers.question10 || '',
+    score,
+    profile,
+    data.userAgent || '',
+    JSON.stringify(answers)
+  ];
+  
+  sheet.appendRow(row);
+  
+  // Auto-resize des colonnes
+  sheet.autoResizeColumns(1, row.length);
+}
+
+function calculateScore(answers) {
+  let score = 0;
+  
+  // Énergie matinale
+  switch(answers.question2) {
+    case 'energique': score += 20; break;
+    case 'moyen': score += 10; break;
+    case 'fatigue': score += 5; break;
+    default: score += 0;
+  }
+  
+  // Concentration
+  switch(answers.question3) {
+    case '8-10': score += 20; break;
+    case '6-7': score += 15; break;
+    case '4-5': score += 10; break;
+    default: score += 5;
+  }
+  
+  // Sommeil
+  switch(answers.question4) {
+    case 'excellent': score += 20; break;
+    case 'correct': score += 15; break;
+    case 'moyen': score += 10; break;
+    default: score += 5;
+  }
+  
+  // Sport
+  switch(answers.question5) {
+    case 'reguliere': score += 15; break;
+    case 'occasionnelle': score += 10; break;
+    case 'rare': score += 5; break;
+    default: score += 0;
+  }
+  
+  // Stress
+  switch(answers.question6) {
+    case 'faible': score += 15; break;
+    case 'modere': score += 10; break;
+    case 'eleve': score += 5; break;
+    default: score += 0;
+  }
+  
+  // Alimentation
+  switch(answers.question7) {
+    case 'rare': score += 10; break;
+    case 'weekend': score += 7; break;
+    case 'regulier': score += 4; break;
+    default: score += 0;
+  }
+  
+  // Hydratation
+  switch(answers.question8) {
+    case '8+': score += 10; break;
+    case '5-7': score += 7; break;
+    case '3-4': score += 4; break;
+    default: score += 0;
+  }
+  
+  return score;
+}
+
+function getProfileType(score) {
+  if (score >= 80) return 'ÉLITE PERFORMER';
+  if (score >= 60) return 'ENTREPRENEUR OPTIMISÉ';
+  if (score >= 40) return 'POTENTIEL À DÉBLOQUER';
+  return 'TRANSFORMATION URGENTE';
+}
+
+// Fonction pour tester le script
+function testScript() {
+  const testData = {
+    prenom: 'Test',
+    email: 'test@example.com',
+    mobile: '+33612345678',
+    answers: {
+      question1: '26-35',
+      question2: 'energique',
+      question3: '8-10',
+      question4: 'excellent',
+      question5: 'reguliere',
+      question6: 'faible',
+      question7: 'rare',
+      question8: '8+',
+      question9: '5-10k',
+      question10: 'energie'
+    },
+    timestamp: new Date().toISOString(),
+    userAgent: 'Test Browser'
+  };
+  
+  console.log('Test data:', testData);
+  console.log('Score calculé:', calculateScore(testData.answers));
+}
+
+// Fonction utilitaire pour créer un nouveau Google Sheet
+function createNewSheet() {
+  const sheet = SpreadsheetApp.create('Quiz Biohacking - Réponses');
+  console.log('Nouveau Google Sheet créé:', sheet.getUrl());
+  console.log('ID du Sheet:', sheet.getId());
+  return sheet.getId();
+}
