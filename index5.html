@@ -1,0 +1,1651 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OraLife - Découvre Ton Score de Vieillissement</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-blue: #000324;
+            --accent-green: #01FF00;
+            --light-gray: #F5F5F5;
+            --white: #FFFFFF;
+            --text-dark: #333333;
+            --text-light: #666666;
+            --shadow: 0 10px 30px rgba(0, 3, 36, 0.1);
+            --shadow-hover: 0 15px 40px rgba(0, 3, 36, 0.15);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--light-gray);
+            color: var(--text-dark);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        /* Progress Bar Style BetterMe - Just the bar */
+        .progress-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: #E0E0E0;
+            z-index: 1000;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-blue) 0%, var(--accent-green) 100%);
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 0 10px rgba(1, 255, 0, 0.3);
+        }
+
+        /* Cards */
+        .card {
+            background: var(--white);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: var(--shadow);
+            animation: slideIn 0.4s ease-out;
+            margin-top: 30px;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Landing Page */
+        .landing {
+            text-align: center;
+            padding: 40px 30px;
+        }
+
+        .logo {
+            font-size: 36px;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--primary-blue) 0%, var(--accent-green) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 30px;
+            letter-spacing: -1px;
+        }
+
+        h1 {
+            font-size: 28px;
+            color: var(--primary-blue);
+            margin-bottom: 15px;
+            font-weight: 800;
+            line-height: 1.2;
+        }
+
+        .subtitle {
+            font-size: 16px;
+            color: var(--text-light);
+            margin-bottom: 20px;
+        }
+
+        .hook {
+            background: linear-gradient(135deg, #FFE5E5 0%, #FFEDED 100%);
+            border-left: 4px solid #FF4444;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin: 25px 0;
+            font-weight: 600;
+            color: #CC0000;
+            font-size: 14px;
+        }
+
+        /* Buttons */
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-blue) 0%, #000850 100%);
+            color: white;
+            border: none;
+            padding: 16px 36px;
+            font-size: 16px;
+            font-weight: 700;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(0, 3, 36, 0.3);
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 40px rgba(0, 3, 36, 0.4);
+        }
+
+        .btn-green {
+            background: linear-gradient(135deg, var(--accent-green) 0%, #00CC00 100%);
+            color: var(--primary-blue);
+            font-weight: 900;
+        }
+
+        .btn-green:hover {
+            box-shadow: 0 15px 40px rgba(1, 255, 0, 0.4);
+        }
+
+        /* Question Styles */
+        .question-text {
+            font-size: 22px;
+            color: var(--primary-blue);
+            margin-bottom: 25px;
+            font-weight: 700;
+            text-align: center;
+            line-height: 1.3;
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .option {
+            background: var(--light-gray);
+            border: 2px solid transparent;
+            padding: 16px 20px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        .option:hover {
+            background: var(--white);
+            border-color: var(--accent-green);
+            transform: translateX(5px);
+            box-shadow: var(--shadow);
+        }
+
+        /* Visual Options with Images */
+        .visual-options {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .visual-option {
+            background: var(--white);
+            border: 3px solid var(--light-gray);
+            padding: 20px;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .visual-option:hover {
+            border-color: var(--accent-green);
+            transform: scale(1.03);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .visual-option .image-placeholder {
+            width: 100%;
+            height: 120px;
+            background: linear-gradient(135deg, #f0f0f0 0%, #e0e0e0 100%);
+            border-radius: 10px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #999;
+            overflow: hidden;
+        }
+
+        .visual-option .image-placeholder img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .visual-option .label {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--primary-blue);
+        }
+
+        /* Four options grid */
+        .visual-options.four-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        /* WOW Breaks */
+        .wow-break {
+            background: linear-gradient(135deg, var(--primary-blue) 0%, #000850 100%);
+            color: white;
+            padding: 35px 25px;
+            border-radius: 20px;
+            text-align: center;
+        }
+
+        .wow-title {
+            font-size: 28px;
+            margin-bottom: 20px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            line-height: 1.2;
+        }
+
+        .wow-content {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 25px 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            line-height: 1.7;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        .wow-stat {
+            font-size: 32px;
+            font-weight: 900;
+            color: var(--accent-green);
+            text-shadow: 0 0 30px rgba(1, 255, 0, 0.5);
+            margin: 20px 0;
+            text-align: center;
+            line-height: 1.1;
+        }
+
+        .wow-source {
+            font-size: 11px;
+            opacity: 0.8;
+            margin-top: 15px;
+            font-style: italic;
+        }
+
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--primary-blue);
+            font-size: 14px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--light-gray);
+            border-radius: 10px;
+            font-size: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent-green);
+            box-shadow: 0 0 0 3px rgba(1, 255, 0, 0.1);
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .checkbox {
+            width: 20px;
+            height: 20px;
+            accent-color: var(--accent-green);
+            margin-top: 2px;
+            flex-shrink: 0;
+        }
+
+        .checkbox-label {
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
+        /* Navigation */
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid var(--light-gray);
+        }
+
+        .btn-back {
+            background: transparent;
+            color: var(--text-light);
+            border: 2px solid var(--light-gray);
+            padding: 10px 20px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-back:hover {
+            border-color: var(--primary-blue);
+            color: var(--primary-blue);
+        }
+
+        /* Loading State */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid var(--white);
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Results */
+        .score-circle {
+            width: 180px;
+            height: 180px;
+            margin: 25px auto;
+            position: relative;
+        }
+
+        .score-value {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 42px;
+            font-weight: 900;
+            color: var(--primary-blue);
+        }
+
+        .results-details {
+            padding: 20px;
+            background: var(--light-gray);
+            border-radius: 12px;
+            margin-top: 20px;
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .card {
+                padding: 20px;
+                margin-top: 20px;
+            }
+            
+            .visual-options {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+            
+            .visual-options.four-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .visual-option .image-placeholder {
+                height: 100px;
+            }
+            
+            h1 {
+                font-size: 24px;
+            }
+            
+            .question-text {
+                font-size: 18px;
+            }
+            
+            .wow-title {
+                font-size: 22px;
+            }
+            
+            .wow-stat {
+                font-size: 24px;
+            }
+            
+            .wow-content {
+                padding: 20px 15px;
+                font-size: 13px;
+            }
+            
+            .option {
+                padding: 14px 16px;
+                font-size: 14px;
+            }
+            
+            .btn-primary {
+                padding: 14px 28px;
+                font-size: 15px;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .logo {
+                font-size: 28px;
+            }
+            
+            h1 {
+                font-size: 22px;
+            }
+            
+            .question-text {
+                font-size: 17px;
+            }
+            
+            .visual-option {
+                padding: 15px;
+            }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- Progress Bar - Just the bar like BetterMe -->
+    <div class="progress-header hidden" id="progressHeader">
+        <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Landing Page -->
+        <div id="landing" class="card landing">
+            <div class="logo">ORA LIFE</div>
+            <h1>Découvre Ton Score de Vieillissement</h1>
+            <p class="subtitle">Test scientifique gratuit - 3 minutes</p>
+            <div class="hook">⚠️ 98% des gens vieillissent 2x plus vite sans le savoir</div>
+            <button class="btn-primary" id="startButton">
+                COMMENCER LE TEST GRATUIT
+            </button>
+        </div>
+
+        <!-- Quiz Container -->
+        <div id="quizContainer" class="card hidden">
+            <div id="questionContent"></div>
+        </div>
+
+        <!-- WOW Break Container -->
+        <div id="wowContainer" class="card wow-break hidden">
+            <div id="wowContent"></div>
+        </div>
+
+        <!-- Form Container -->
+        <div id="formContainer" class="card hidden">
+            <h2 style="color: var(--primary-blue); margin-bottom: 25px; text-align: center; font-size: 22px;">
+                Dernière étape pour recevoir ton score
+            </h2>
+            <form id="finalForm">
+                <div class="form-group">
+                    <label class="form-label">Prénom *</label>
+                    <input type="text" class="form-input" id="firstName" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email *</label>
+                    <input type="email" class="form-input" id="email" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Téléphone (optionnel)</label>
+                    <input type="tel" class="form-input" id="phone">
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" class="checkbox" id="consent" required>
+                    <label for="consent" class="checkbox-label">
+                        J'accepte de recevoir mon protocole personnalisé et les conseils d'ORA LIFE
+                    </label>
+                </div>
+                <button type="submit" class="btn-primary" style="width: 100%; margin-top: 10px;">
+                    <span id="submitText">RECEVOIR MON SCORE DE VIEILLISSEMENT</span>
+                    <span id="loadingSpinner" class="loading hidden"></span>
+                </button>
+            </form>
+        </div>
+
+        <!-- Results Container -->
+        <div id="resultsContainer" class="card hidden">
+            <div style="text-align: center;">
+                <h2 style="color: var(--primary-blue); margin-bottom: 25px; font-size: 24px;">
+                    Tes Résultats
+                </h2>
+                <div class="score-circle">
+                    <svg width="180" height="180">
+                        <circle cx="90" cy="90" r="80" fill="none" stroke="#F5F5F5" stroke-width="18"/>
+                        <circle id="scoreCircle" cx="90" cy="90" r="80" fill="none" stroke="url(#gradient)" stroke-width="18" 
+                                stroke-dasharray="502" stroke-dashoffset="502" 
+                                transform="rotate(-90 90 90)"
+                                style="transition: stroke-dashoffset 2s ease-out"/>
+                        <defs>
+                            <linearGradient id="gradient">
+                                <stop offset="0%" stop-color="#000324"/>
+                                <stop offset="100%" stop-color="#01FF00"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                    <div class="score-value" id="scoreValue">0</div>
+                </div>
+                <div id="resultsDetails"></div>
+                <button class="btn-primary" style="margin-top: 25px;">
+                    RECEVOIR MON PROTOCOLE COMPLET PAR EMAIL
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Wait for DOM to be ready
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            // Complete quiz data with all 38 questions
+        const allQuestions = [
+            // PAGE 1-3: PROFILAGE VISUEL
+            {
+                id: 'gender',
+                text: 'Tu es ?',
+                type: 'visual',
+                category: 'profile',
+                options: [
+                    { value: 'homme', label: 'Homme', image: 'homme.jpg' },
+                    { value: 'femme', label: 'Femme', image: 'femme.jpg' }
+                ]
+            },
+            {
+                id: 'age',
+                text: 'Quel âge as-tu ?',
+                type: 'visual-four',
+                category: 'profile',
+                options: [
+                    { value: '18-29', label: '18-29 ans', image: 'age-20s.jpg' },
+                    { value: '30-39', label: '30-39 ans', image: 'age-30s.jpg' },
+                    { value: '40-49', label: '40-49 ans', image: 'age-40s.jpg' },
+                    { value: '50+', label: '50+ ans', image: 'age-50s.jpg' }
+                ]
+            },
+            {
+                id: 'objective',
+                text: 'Ton objectif #1 ?',
+                type: 'visual-four',
+                category: 'profile',
+                options: [
+                    { value: 'energie', label: 'Énergie illimitée', image: 'energy.jpg' },
+                    { value: 'corps', label: 'Corps optimal', image: 'body.jpg' },
+                    { value: 'mental', label: 'Mental sharp', image: 'brain.jpg' },
+                    { value: 'longevite', label: 'Longévité maximale', image: 'longevity.jpg' }
+                ]
+            },
+            
+            // SECTION 1: ÉTAT ACTUEL (Q1-8)
+            {
+                id: 'energy_vs_3years',
+                text: 'Comparé à il y a 3 ans, ton énergie c\'est :',
+                type: 'list',
+                category: 'etat',
+                options: [
+                    'Mieux qu\'avant',
+                    'Identique',
+                    '-20% environ',
+                    '-40% environ',
+                    '-60% ou plus'
+                ]
+            },
+            {
+                id: 'last_100_percent',
+                text: 'La dernière fois que tu t\'es senti(e) à 100% :',
+                type: 'list',
+                category: 'etat',
+                options: [
+                    'Cette semaine',
+                    'Ce mois-ci',
+                    'Cette année',
+                    'L\'année dernière',
+                    'Je ne sais plus'
+                ]
+            },
+            {
+                id: 'change_blocker',
+                text: 'Ce qui t\'a empêché de changer jusqu\'ici :',
+                type: 'list',
+                category: 'etat',
+                options: [
+                    'Trop d\'infos contradictoires',
+                    'Manque de temps',
+                    'J\'ai essayé sans résultats',
+                    'Trop cher',
+                    'Je ne savais pas comment'
+                ]
+            },
+            {
+                id: 'stairs_test',
+                text: 'Test de l\'escalier (2 étages sans pause) :',
+                type: 'list',
+                category: 'etat',
+                options: [
+                    'Facile, en parlant',
+                    'Léger essoufflement',
+                    'Besoin de reprendre mon souffle',
+                    'Très difficile',
+                    'J\'évite les escaliers'
+                ]
+            },
+            {
+                id: 'sitting_hours',
+                text: 'Heures assis par jour :',
+                type: 'list',
+                category: 'etat',
+                options: [
+                    'Moins de 4h',
+                    '4-6h',
+                    '6-8h',
+                    '8-10h',
+                    'Plus de 10h'
+                ]
+            },
+            // WOW BREAK #1 après question 8
+            
+            {
+                id: 'night_wakeups',
+                text: 'Réveils nocturnes par nuit :',
+                type: 'list',
+                category: 'sommeil',
+                options: [
+                    '0 (sommeil parfait)',
+                    '1 fois',
+                    '2-3 fois',
+                    '4+ fois',
+                    'Insomnie chronique'
+                ]
+            },
+            {
+                id: 'cycle_femme',
+                text: 'Ton cycle menstruel :',
+                type: 'list',
+                category: 'hormones',
+                condition: 'femme',
+                options: [
+                    'Régulier sans souci',
+                    'Quelques variations',
+                    'Irrégulier',
+                    'Très douloureux',
+                    'Ménopause/Pré-ménopause'
+                ]
+            },
+            {
+                id: 'libido_homme',
+                text: 'Ta libido vs il y a 5 ans :',
+                type: 'list',
+                category: 'hormones',
+                condition: 'homme',
+                options: [
+                    'Identique ou mieux',
+                    '-20% environ',
+                    '-40% environ',
+                    '-60% environ',
+                    'Quasi inexistante'
+                ]
+            },
+            {
+                id: 'first_crash',
+                text: 'Ton premier crash énergétique arrive :',
+                type: 'list',
+                category: 'energie',
+                options: [
+                    'Jamais',
+                    'Après 17h',
+                    'Vers 14h-15h',
+                    'Juste après le déjeuner',
+                    'Dès le matin'
+                ]
+            },
+            
+            // SECTION 2: BIOMARQUEURS (Q9-16)
+            {
+                id: 'weight_vs_ideal',
+                text: 'Ton poids vs ton idéal :',
+                type: 'list',
+                category: 'biomarqueurs',
+                options: [
+                    'Parfait',
+                    '+2-5 kg',
+                    '+5-10 kg',
+                    '+10-15 kg',
+                    '+15 kg ou plus'
+                ]
+            },
+            {
+                id: 'digestion',
+                text: 'Ta digestion au quotidien :',
+                type: 'list',
+                category: 'biomarqueurs',
+                options: [
+                    'Parfaite comme une horloge',
+                    'Quelques inconforts occasionnels',
+                    'Ballonnements fréquents',
+                    'Problèmes quotidiens',
+                    'Chaos intestinal permanent'
+                ]
+            },
+            // WOW BREAK #2 après question 14
+            
+            {
+                id: 'joint_pain',
+                text: 'Douleurs articulaires :',
+                type: 'list',
+                category: 'biomarqueurs',
+                options: [
+                    'Jamais',
+                    'Après effort intense uniquement',
+                    'Le matin au réveil',
+                    'Régulièrement dans la journée',
+                    'Douleurs chroniques permanentes'
+                ]
+            },
+            {
+                id: 'memory_focus',
+                text: 'Ta mémoire et concentration :',
+                type: 'list',
+                category: 'biomarqueurs',
+                options: [
+                    'Excellentes',
+                    'Quelques oublis mineurs',
+                    'Difficultés fréquentes',
+                    'Brouillard mental régulier',
+                    'Très inquiétant'
+                ]
+            },
+            {
+                id: 'symptoms_femme',
+                text: 'Symptômes hormonaux :',
+                type: 'list',
+                category: 'hormones',
+                condition: 'femme',
+                options: [
+                    'Aucun',
+                    'SPM léger',
+                    'Sautes d\'humeur fréquentes',
+                    'Bouffées de chaleur',
+                    'Multiples symptômes'
+                ]
+            },
+            {
+                id: 'muscle_homme',
+                text: 'Ta masse musculaire :',
+                type: 'list',
+                category: 'hormones',
+                condition: 'homme',
+                options: [
+                    'Maintenue ou en gain',
+                    'Légère perte (-5%)',
+                    'Perte visible (-10%)',
+                    'Fonte importante (-20%)',
+                    'Sarcopénie avancée'
+                ]
+            },
+            {
+                id: 'recovery',
+                text: 'Récupération après effort physique :',
+                type: 'list',
+                category: 'biomarqueurs',
+                options: [
+                    'Moins de 24h',
+                    '24-48h',
+                    '2-3 jours',
+                    '4-7 jours',
+                    'Plus d\'une semaine'
+                ]
+            },
+            {
+                id: 'stress_level',
+                text: 'Niveau de stress chronique :',
+                type: 'list',
+                category: 'mental',
+                options: [
+                    'Zen permanent',
+                    'Gérable la plupart du temps',
+                    'Élevé régulièrement',
+                    'Très élevé quotidiennement',
+                    'Mode survie/burnout'
+                ]
+            },
+            {
+                id: 'skin_quality',
+                text: 'Qualité de ta peau :',
+                type: 'list',
+                category: 'biomarqueurs',
+                options: [
+                    'Éclatante et ferme',
+                    'Correcte pour mon âge',
+                    'Terne et fatiguée',
+                    'Rides marquées',
+                    'Très vieillie prématurément'
+                ]
+            },
+            
+            // SECTION 3: ENVIRONNEMENT (Q17-24)
+            {
+                id: 'living_environment',
+                text: 'Ton environnement principal :',
+                type: 'list',
+                category: 'environnement',
+                options: [
+                    'Nature/campagne (air pur)',
+                    'Petite ville (<50k habitants)',
+                    'Ville moyenne (50-200k)',
+                    'Grande ville (200k-1M)',
+                    'Mégapole (Paris, Lyon, Marseille)'
+                ]
+            },
+            // WOW BREAK #3 après question 22
+            
+            {
+                id: 'sun_exposure',
+                text: 'Exposition soleil sans protection :',
+                type: 'list',
+                category: 'environnement',
+                options: [
+                    '30min+ quotidien',
+                    '15-30min régulier',
+                    'Quelques fois/semaine',
+                    'Rarement',
+                    'Jamais (vampire mode)'
+                ]
+            },
+            {
+                id: 'nature_time',
+                text: 'Temps en nature par semaine :',
+                type: 'list',
+                category: 'environnement',
+                options: [
+                    'Plus de 10h',
+                    '5-10h',
+                    '2-5h',
+                    'Moins de 2h',
+                    'Zéro'
+                ]
+            },
+            {
+                id: 'sleep_quality',
+                text: 'Qualité de ton sommeil :',
+                type: 'list',
+                category: 'sommeil',
+                options: [
+                    '7-9h de sommeil profond',
+                    '6-7h correct',
+                    '5-6h léger et fragmenté',
+                    'Moins de 5h',
+                    'Insomnie chronique'
+                ]
+            },
+            {
+                id: 'bedtime',
+                text: 'Heure habituelle du coucher :',
+                type: 'list',
+                category: 'sommeil',
+                options: [
+                    'Avant 22h',
+                    '22h-23h',
+                    '23h-minuit',
+                    'Minuit-1h',
+                    'Après 1h du matin'
+                ]
+            },
+            {
+                id: 'screens_before_bed',
+                text: 'Écrans avant de dormir :',
+                type: 'list',
+                category: 'sommeil',
+                options: [
+                    'Jamais (coupure 2h avant)',
+                    'Avec lunettes anti-lumière bleue',
+                    'Parfois',
+                    'Toujours',
+                    'Jusqu\'au lit'
+                ]
+            },
+            {
+                id: 'breakfast',
+                text: 'Ton petit-déjeuner type :',
+                type: 'list',
+                category: 'nutrition',
+                options: [
+                    'Jeûne intermittent',
+                    'Protéines + bons gras',
+                    'Céréales complètes + fruits',
+                    'Sucré (pain blanc, confiture)',
+                    'Juste café/rien'
+                ]
+            },
+            {
+                id: 'hydration',
+                text: 'Hydratation quotidienne (eau pure) :',
+                type: 'list',
+                category: 'nutrition',
+                options: [
+                    '2L+ religieusement',
+                    '1.5-2L',
+                    '1-1.5L',
+                    'Moins d\'1L',
+                    'Principalement café/sodas'
+                ]
+            },
+            
+            // SECTION 4: HABITUDES (Q25-32)
+            {
+                id: 'alcohol',
+                text: 'Consommation d\'alcool par semaine :',
+                type: 'list',
+                category: 'habitudes',
+                options: [
+                    '0 (jamais)',
+                    '1-3 verres',
+                    '4-7 verres (1/jour)',
+                    '8-14 verres (2/jour)',
+                    '15+ verres'
+                ]
+            },
+            // WOW BREAK #4 après question 30
+            
+            {
+                id: 'physical_activity',
+                text: 'Activité physique par semaine :',
+                type: 'list',
+                category: 'habitudes',
+                options: [
+                    '5+ séances structurées',
+                    '3-4 fois',
+                    '1-2 fois',
+                    'Occasionnelle',
+                    'Sédentaire complet'
+                ]
+            },
+            {
+                id: 'activity_type',
+                text: 'Type d\'activité principale :',
+                type: 'list',
+                category: 'habitudes',
+                options: [
+                    'HIIT + Musculation',
+                    'Cardio + Yoga',
+                    'Marche active',
+                    'Marche tranquille',
+                    'Aucune activité'
+                ]
+            },
+            {
+                id: 'supplements',
+                text: 'Compléments alimentaires :',
+                type: 'list',
+                category: 'habitudes',
+                options: [
+                    'Protocole complet personnalisé',
+                    'Basiques (Vit D, Omega 3, Magnésium)',
+                    'Occasionnels',
+                    'Jamais',
+                    'Je ne sais pas quoi prendre'
+                ]
+            },
+            {
+                id: 'tracking',
+                text: 'Tracking de ta santé :',
+                type: 'list',
+                category: 'habitudes',
+                options: [
+                    'Multiple (montre + bague + apps)',
+                    'Montre connectée',
+                    'Application mobile',
+                    'Occasionnel',
+                    'Jamais'
+                ]
+            },
+            {
+                id: 'mental_load_femme',
+                text: 'Charge mentale famille :',
+                type: 'list',
+                category: 'mental',
+                condition: 'femme',
+                options: [
+                    'Bien équilibrée',
+                    'Gérable',
+                    'Lourde',
+                    'Très lourde',
+                    'Écrasante'
+                ]
+            },
+            {
+                id: 'work_pressure_homme',
+                text: 'Pression professionnelle :',
+                type: 'list',
+                category: 'mental',
+                condition: 'homme',
+                options: [
+                    'Stimulante et positive',
+                    'Normale',
+                    'Élevée',
+                    'Très élevée',
+                    'Toxique'
+                ]
+            },
+            {
+                id: 'social_relations',
+                text: 'Relations sociales épanouissantes :',
+                type: 'list',
+                category: 'mental',
+                options: [
+                    'Très riches et nombreuses',
+                    'Satisfaisantes',
+                    'Limitées',
+                    'Difficiles/conflictuelles',
+                    'Isolement social'
+                ]
+            },
+            {
+                id: 'last_vacation',
+                text: 'Dernières vacances vraiment déconnectées :',
+                type: 'list',
+                category: 'mental',
+                options: [
+                    'Il y a moins de 3 mois',
+                    '3-6 mois',
+                    '6-12 mois',
+                    'Plus d\'un an',
+                    'Je ne déconnecte jamais'
+                ]
+            },
+            
+            // SECTION 5: PROJECTION (Q33-38)
+            {
+                id: 'projection_5years',
+                text: 'Sans changement, dans 5 ans tu seras :',
+                type: 'list',
+                category: 'projection',
+                options: [
+                    'En meilleure forme (j\'optimise déjà)',
+                    'Stable (stagnation)',
+                    'Diminué(e) de 20%',
+                    'Très diminué(e) de 40%',
+                    'J\'ai peur d\'y penser'
+                ]
+            },
+            // WOW BREAK #5 après question 38
+            
+            {
+                id: 'biggest_fear',
+                text: 'Ta plus grande peur santé :',
+                type: 'list',
+                category: 'projection',
+                options: [
+                    'AVC/Crise cardiaque',
+                    'Cancer',
+                    'Alzheimer/Démence',
+                    'Dépendance physique',
+                    'Mourir avant la retraite'
+                ]
+            },
+            {
+                id: 'motivation',
+                text: 'Ce qui te motive VRAIMENT à changer :',
+                type: 'list',
+                category: 'projection',
+                options: [
+                    'Voir mes petits-enfants grandir',
+                    'Rester autonome jusqu\'au bout',
+                    'Continuer à performer',
+                    'Être un exemple pour mes proches',
+                    'Ne pas souffrir'
+                ]
+            },
+            {
+                id: 'budget',
+                text: 'Budget mensuel pour ta santé :',
+                type: 'list',
+                category: 'projection',
+                options: [
+                    'Moins de 50€',
+                    '50-150€',
+                    '150-300€',
+                    '300-500€',
+                    'Plus de 500€'
+                ]
+            },
+            {
+                id: 'time_available',
+                text: 'Temps disponible par jour pour ta santé :',
+                type: 'list',
+                category: 'projection',
+                options: [
+                    'Moins de 15min',
+                    '15-30min',
+                    '30-60min',
+                    '1-2h',
+                    'Plus de 2h'
+                ]
+            },
+            {
+                id: 'magic_wish',
+                text: 'Si tu avais UNE baguette magique :',
+                type: 'list',
+                category: 'projection',
+                options: [
+                    'Énergie illimitée',
+                    'Corps parfait',
+                    'Mental de génie',
+                    'Sommeil réparateur',
+                    '+30 ans de vie en forme'
+                ]
+            }
+            // WOW BREAK #6 après question 44
+        ];
+
+        // WOW Breaks configuration
+        const wowBreaks = [
+            {
+                afterIndex: 7, // After question 8
+                title: '🪑 TA CHAISE TE TUE',
+                content: `
+                    <div class="wow-stat">10h assis = +52% mortalité</div>
+                    <p style="text-align: center; font-size: 16px; margin: 15px 0;">
+                        <strong>MÊME avec du sport !</strong>
+                    </p>
+                    
+                    <p><strong>📊 Meta-analyse massive</strong></p>
+                    <p>595,086 adultes suivis - PLoS ONE (2013)</p>
+                    
+                    <div style="margin: 20px 0;">
+                        <p><strong>La courbe mortelle :</strong></p>
+                        <p>• 4h assis : Normal</p>
+                        <p>• 7h : +5% mortalité</p>
+                        <p>• 10h : +34% (AVEC sport)</p>
+                        <p>• 10h : +52% (SANS sport)</p>
+                    </div>
+                    
+                    <p style="color: var(--accent-green); font-weight: 700;">
+                        ⚠️ 150min sport/semaine ne compense PAS
+                    </p>
+                    
+                    <div class="wow-source">Source : ncbi.nlm.nih.gov/pmc/articles/PMC3827429/</div>
+                `
+            },
+            {
+                afterIndex: 13, // After question 14
+                title: '🧠 TON VENTRE CONTRÔLE TON CERVEAU',
+                content: `
+                    <div class="wow-stat">95% sérotonine = intestin</div>
+                    <p style="text-align: center; font-size: 16px; margin: 15px 0;">
+                        <strong>Ton bonheur vient du ventre !</strong>
+                    </p>
+                    
+                    <p><strong>📊 Étude révolutionnaire</strong></p>
+                    <p>Nature Microbiology (2023) - 1,054 participants</p>
+                    
+                    <div style="margin: 20px 0;">
+                        <p><strong>Intestin déréglé =</strong></p>
+                        <p>😔 +43% risque dépression</p>
+                        <p>😰 +38% anxiété chronique</p>
+                        <p>🔥 +52% inflammation</p>
+                    </div>
+                    
+                    <p style="color: var(--accent-green); font-weight: 700;">
+                        ✅ 3 semaines de probiotiques = humeur transformée
+                    </p>
+                    
+                    <div class="wow-source">Source : nature.com/articles/s41564-023-01339-5</div>
+                `
+            },
+            {
+                afterIndex: 21, // After question 22
+                title: '🏙️ L\'AIR QUI TUE',
+                content: `
+                    <div class="wow-stat">Ville = -2.2 ans de vie</div>
+                    <p style="text-align: center; font-size: 16px; margin: 15px 0;">
+                        <strong>7 millions de morts/an</strong>
+                    </p>
+                    
+                    <p><strong>📊 The Lancet (2022)</strong></p>
+                    <p>Planetary Health - Données mondiales</p>
+                    
+                    <div style="margin: 20px 0;">
+                        <p><strong>PM2.5 > 10 μg/m³ =</strong></p>
+                        <p>❤️ +15% maladies cardiaques</p>
+                        <p>🧠 +25% déclin cognitif</p>
+                        <p>🔥 +30% inflammation</p>
+                    </div>
+                    
+                    <p><strong>📍 Niveaux PM2.5 :</strong></p>
+                    <p>• Paris : 15-20 μg/m³</p>
+                    <p>• Lyon : 18-22 μg/m³</p>
+                    <p>• Campagne : 5-8 μg/m³</p>
+                    
+                    <div class="wow-source">Source : thelancet.com/journals/lanplh</div>
+                `
+            },
+            {
+                afterIndex: 29, // After question 30
+                title: '🍷 LA VÉRITÉ SUR L\'ALCOOL',
+                content: `
+                    <div class="wow-stat">1 verre/jour = -6 mois</div>
+                    <p style="text-align: center; font-size: 16px; margin: 15px 0;">
+                        <strong>OMS 2023 : "Aucune dose sûre"</strong>
+                    </p>
+                    
+                    <p><strong>📊 The Lancet (2023)</strong></p>
+                    <p>600,000 participants - 19 pays</p>
+                    
+                    <div style="margin: 20px 0;">
+                        <p><strong>Impact d\'1 verre/jour :</strong></p>
+                        <p>☠️ +5% tous cancers</p>
+                        <p>⏰ -6 mois espérance de vie</p>
+                        <p>🧠 +23% déclin cognitif</p>
+                        <p>💔 +15% maladies cardiaques</p>
+                    </div>
+                    
+                    <p style="color: var(--accent-green); font-weight: 700;">
+                        Le "French Paradox" est un mythe !
+                    </p>
+                    
+                    <div class="wow-source">Source : thelancet.com/journals/lancet</div>
+                `
+            },
+            {
+                afterIndex: 37, // After question 38
+                title: '📊 L\'INÉGALITÉ FACE À LA MORT',
+                content: `
+                    <div class="wow-stat">Diplôme = +7 ans de vie</div>
+                    <p style="text-align: center; font-size: 16px; margin: 15px 0;">
+                        <strong>INSEE 2023 - France</strong>
+                    </p>
+                    
+                    <div style="margin: 20px 0;">
+                        <p><strong>Espérance de vie :</strong></p>
+                        <p>🎓 Bac+5 : 85 ans</p>
+                        <p>📚 Bac : 82 ans</p>
+                        <p>❌ Sans diplôme : 78 ans</p>
+                    </div>
+                    
+                    <p><strong>MAIS Harvard prouve :</strong></p>
+                    <p>5 habitudes = +14 ans !</p>
+                    <p>✓ Alimentation méditerranéenne</p>
+                    <p>✓ 30min activité/jour</p>
+                    <p>✓ IMC < 25</p>
+                    <p>✓ 0 cigarette</p>
+                    <p>✓ < 1 verre alcool/jour</p>
+                    
+                    <p style="color: var(--accent-green); font-weight: 700;">
+                        Tu peux changer de catégorie !
+                    </p>
+                    
+                    <div class="wow-source">Source : insee.fr/fr/statistiques/6687000</div>
+                `
+            },
+            {
+                afterIndex: 43, // After last question
+                title: '⚡ TU CONTRÔLES TON DESTIN',
+                content: `
+                    <div class="wow-stat">77% = Tes choix</div>
+                    <p style="text-align: center; font-size: 16px; margin: 15px 0;">
+                        <strong>Génétique = seulement 23% !</strong>
+                    </p>
+                    
+                    <p><strong>📊 Science (2018)</strong></p>
+                    <p>2,748 jumeaux - 40 ans de suivi</p>
+                    
+                    <div style="margin: 20px 0;">
+                        <p><strong>En 12 semaines :</strong></p>
+                        <p>✓ 500+ gènes modifiés</p>
+                        <p>✓ -3 ans d\'âge cellulaire</p>
+                        <p>✓ Gènes longévité activés</p>
+                    </div>
+                    
+                    <p style="color: var(--accent-green); font-weight: 700; font-size: 18px;">
+                        Prêt(e) pour TON protocole ?
+                    </p>
+                    
+                    <div class="wow-source">Source : science.org/doi/10.1126/science.aat7615</div>
+                `
+            }
+        ];
+
+            // Global state
+            const quizState = {
+                answers: {},
+                currentIndex: 0,
+                wowBreaksShown: [],
+                gender: null
+            };
+
+            // Google Apps Script URL
+            const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxj-KV2FeVMfELQL10xJ8tc5ItDBjM3-rQGpxVu16_ov1LFRX40YcVUmTEGvqOZb0h0/exec';
+
+            // Start Quiz
+            function startQuiz() {
+                document.getElementById('landing').classList.add('hidden');
+                document.getElementById('quizContainer').classList.remove('hidden');
+                document.getElementById('progressHeader').classList.remove('hidden');
+                showQuestion(0);
+            }
+
+            // Select Answer
+            function selectAnswer(questionId, value, index) {
+                value = value.replace(/\\'/g, "'");
+                
+                quizState.answers[questionId] = value;
+                
+                // Store gender for conditional questions
+                if (questionId === 'gender') {
+                    quizState.gender = value;
+                }
+                
+                quizState.currentIndex = index + 1;
+                
+                setTimeout(() => {
+                    showQuestion(index + 1);
+                }, 200);
+            }
+
+            // Go Back
+            function goBack(index) {
+                // Remove WOW break from shown list if going back past it
+                const wowIndex = index - 1;
+                const wowIndexPos = quizState.wowBreaksShown.indexOf(wowIndex);
+                if (wowIndexPos > -1) {
+                    quizState.wowBreaksShown.splice(wowIndexPos, 1);
+                }
+                
+                quizState.currentIndex = index - 1;
+                showQuestion(index - 1);
+            }
+
+            // Continue after WOW
+            function continueAfterWow() {
+                document.getElementById('wowContainer').classList.add('hidden');
+                document.getElementById('quizContainer').classList.remove('hidden');
+                showQuestion(quizState.currentIndex);
+            }
+
+            // Make functions globally accessible
+            window.selectAnswer = selectAnswer;
+            window.goBack = goBack;
+            window.continueAfterWow = continueAfterWow;
+
+        // Get filtered questions based on gender
+        function getFilteredQuestions() {
+            return allQuestions.filter(q => {
+                if (q.condition) {
+                    return q.condition === quizState.gender;
+                }
+                return true;
+            });
+        }
+
+        // Calculate total steps
+        function getTotalSteps() {
+            const filteredQuestions = getFilteredQuestions();
+            return filteredQuestions.length + wowBreaks.length + 1; // +1 for form
+        }
+
+        // Show Question
+        function showQuestion(index) {
+            const filteredQuestions = getFilteredQuestions();
+            
+            // Check for WOW break
+            const wowBreak = wowBreaks.find(w => 
+                w.afterIndex === index - 1 && 
+                !quizState.wowBreaksShown.includes(w.afterIndex)
+            );
+            
+            if (wowBreak) {
+                quizState.wowBreaksShown.push(wowBreak.afterIndex);
+                showWowBreak(wowBreak);
+                return;
+            }
+            
+            if (index >= filteredQuestions.length) {
+                showForm();
+                return;
+            }
+            
+            const question = filteredQuestions[index];
+            const container = document.getElementById('questionContent');
+            
+            let html = `<h2 class="question-text">${question.text}</h2>`;
+            
+            if (question.type === 'visual' || question.type === 'visual-four') {
+                const gridClass = question.type === 'visual-four' ? 'visual-options four-grid' : 'visual-options';
+                html += `<div class="${gridClass}">`;
+                question.options.forEach(option => {
+                    const optionValue = option.value.replace(/'/g, "\\'");
+                    html += `
+                        <div class="visual-option" onclick="selectAnswer('${question.id}', '${optionValue}', ${index})">
+                            <div class="image-placeholder">
+                                ${option.image ? 
+                                    `[Image: ${option.label}]` : 
+                                    `[${option.label}]`
+                                }
+                            </div>
+                            <div class="label">${option.label}</div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+            } else {
+                html += '<div class="options">';
+                question.options.forEach(option => {
+                    const optionValue = option.replace(/'/g, "\\'");
+                    html += `
+                        <div class="option" onclick="selectAnswer('${question.id}', '${optionValue}', ${index})">
+                            ${option}
+                        </div>
+                    `;
+                });
+                html += '</div>';
+            }
+            
+            // Add navigation
+            if (index > 0) {
+                html += `
+                    <div class="nav-buttons">
+                        <button class="btn-back" onclick="goBack(${index})">← Retour</button>
+                        <div></div>
+                    </div>
+                `;
+            }
+            
+            container.innerHTML = html;
+            updateProgress();
+        }
+
+        // Show WOW Break
+        function showWowBreak(wowBreak) {
+            document.getElementById('quizContainer').classList.add('hidden');
+            document.getElementById('wowContainer').classList.remove('hidden');
+            
+            document.getElementById('wowContent').innerHTML = `
+                <div class="wow-title">${wowBreak.title}</div>
+                <div class="wow-content">${wowBreak.content}</div>
+                <button class="btn-primary btn-green" onclick="continueAfterWow()" style="margin-top: 20px;">
+                    CONTINUER LE TEST →
+                </button>
+            `;
+            
+            updateProgress();
+        }
+
+        // Continue after WOW
+        function continueAfterWow() {
+            document.getElementById('wowContainer').classList.add('hidden');
+            document.getElementById('quizContainer').classList.remove('hidden');
+            showQuestion(quizState.currentIndex);
+        }
+
+        // Select Answer
+        function selectAnswer(questionId, value, index) {
+            value = value.replace(/\\'/g, "'");
+            
+            quizState.answers[questionId] = value;
+            
+            // Store gender for conditional questions
+            if (questionId === 'gender') {
+                quizState.gender = value;
+            }
+            
+            quizState.currentIndex = index + 1;
+            
+            setTimeout(() => {
+                showQuestion(index + 1);
+            }, 200);
+        }
+
+        // Go Back
+        function goBack(index) {
+            // Remove WOW break from shown list if going back past it
+            const wowIndex = index - 1;
+            const wowIndexPos = quizState.wowBreaksShown.indexOf(wowIndex);
+            if (wowIndexPos > -1) {
+                quizState.wowBreaksShown.splice(wowIndexPos, 1);
+            }
+            
+            quizState.currentIndex = index - 1;
+            showQuestion(index - 1);
+        }
+
+        // Update Progress - Just the bar, no text
+        function updateProgress() {
+            const totalSteps = getTotalSteps();
+            const currentStep = quizState.currentIndex + quizState.wowBreaksShown.length + 1;
+            const progress = (currentStep / totalSteps) * 100;
+            
+            document.getElementById('progressBar').style.width = progress + '%';
+        }
+
+        // Show Form
+        function showForm() {
+            document.getElementById('quizContainer').classList.add('hidden');
+            document.getElementById('formContainer').classList.remove('hidden');
+            updateProgress();
+        }
+
+        // Submit Form
+        document.getElementById('finalForm')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            document.getElementById('submitText').classList.add('hidden');
+            document.getElementById('loadingSpinner').classList.remove('hidden');
+            submitBtn.disabled = true;
+            
+            const formData = {
+                firstName: document.getElementById('firstName').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                ...quizState.answers,
+                timestamp: new Date().toISOString()
+            };
+            
+            try {
+                const score = calculateScore();
+                
+                await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        ...formData,
+                        score: score.total,
+                        biologicalAge: score.biologicalAge
+                    })
+                });
+                
+                showResults(score);
+                
+            } catch (error) {
+                console.error('Error:', error);
+                showResults(calculateScore());
+            }
+        });
+
+        }); // End of DOMContentLoaded
+
+        // Calculate Score (Enhanced)
+        function calculateScore() {
+            let total = 100;
+            let categories = {
+                energie: 100,
+                biomarqueurs: 100,
+                environnement: 100,
+                habitudes: 100,
+                mental: 100
+            };
+            
+            // Complete scoring logic for all questions
+            const scoring = {
+                'energy_vs_3years': { 'Mieux qu\'avant': 5, 'Identique': 0, '-20% environ': -10, '-40% environ': -15, '-60% ou plus': -20 },
+                'last_100_percent': { 'Cette semaine': 0, 'Ce mois-ci': -5, 'Cette année': -10, 'L\'année dernière': -15, 'Je ne sais plus': -20 },
+                'stairs_test': { 'Facile, en parlant': 0, 'Léger essoufflement': -5, 'Besoin de reprendre mon souffle': -10, 'Très difficile': -15, 'J\'évite les escaliers': -20 },
+                'sitting_hours': { 'Moins de 4h': 0, '4-6h': -3, '6-8h': -6, '8-10h': -10, 'Plus de 10h': -15 },
+                'night_wakeups': { '0 (sommeil parfait)': 0, '1 fois': -3, '2-3 fois': -7, '4+ fois': -12, 'Insomnie chronique': -20 },
+                'first_crash': { 'Jamais': 0, 'Après 17h': -3, 'Vers 14h-15h': -7, 'Juste après le déjeuner': -10, 'Dès le matin': -15 },
+                'weight_vs_ideal': { 'Parfait': 0, '+2-5 kg': -3, '+5-10 kg': -7, '+10-15 kg': -12, '+15 kg ou plus': -18 },
+                'digestion': { 'Parfaite comme une horloge': 0, 'Quelques inconforts occasionnels': -3, 'Ballonnements fréquents': -7, 'Problèmes quotidiens': -12, 'Chaos intestinal permanent': -18 },
+                'joint_pain': { 'Jamais': 0, 'Après effort intense uniquement': -3, 'Le matin au réveil': -7, 'Régulièrement dans la journée': -12, 'Douleurs chroniques permanentes': -18 },
+                'memory_focus': { 'Excellentes': 0, 'Quelques oublis mineurs': -3, 'Difficultés fréquentes': -7, 'Brouillard mental régulier': -12, 'Très inquiétant': -18 },
+                'recovery': { 'Moins de 24h': 0, '24-48h': -5, '2-3 jours': -10, '4-7 jours': -15, 'Plus d\'une semaine': -20 },
+                'stress_level': { 'Zen permanent': 0, 'Gérable la plupart du temps': -5, 'Élevé régulièrement': -10, 'Très élevé quotidiennement': -15, 'Mode survie/burnout': -20 },
+                'skin_quality': { 'Éclatante et ferme': 0, 'Correcte pour mon âge': -3, 'Terne et fatiguée': -7, 'Rides marquées': -12, 'Très vieillie prématurément': -18 },
+                'living_environment': { 'Nature/campagne (air pur)': 0, 'Petite ville (<50k habitants)': -2, 'Ville moyenne (50-200k)': -5, 'Grande ville (200k-1M)': -8, 'Mégapole (Paris, Lyon, Marseille)': -12 },
+                'sun_exposure': { '30min+ quotidien': 0, '15-30min régulier': -2, 'Quelques fois/semaine': -5, 'Rarement': -8, 'Jamais (vampire mode)': -12 },
+                'nature_time': { 'Plus de 10h': 0, '5-10h': -2, '2-5h': -5, 'Moins de 2h': -8, 'Zéro': -12 },
+                'sleep_quality': { '7-9h de sommeil profond': 0, '6-7h correct': -5, '5-6h léger et fragmenté': -10, 'Moins de 5h': -15, 'Insomnie chronique': -20 },
+                'bedtime': { 'Avant 22h': 0, '22h-23h': -3, '23h-minuit': -6, 'Minuit-1h': -10, 'Après 1h du matin': -15 },
+                'screens_before_bed': { 'Jamais (coupure 2h avant)': 0, 'Avec lunettes anti-lumière bleue': -3, 'Parfois': -6, 'Toujours': -10, 'Jusqu\'au lit': -15 },
+                'breakfast': { 'Jeûne intermittent': 0, 'Protéines + bons gras': 0, 'Céréales complètes + fruits': -3, 'Sucré (pain blanc, confiture)': -8, 'Juste café/rien': -10 },
+                'hydration': { '2L+ religieusement': 0, '1.5-2L': -3, '1-1.5L': -6, 'Moins d\'1L': -10, 'Principalement café/sodas': -15 },
+                'alcohol': { '0 (jamais)': 0, '1-3 verres': -3, '4-7 verres (1/jour)': -7, '8-14 verres (2/jour)': -12, '15+ verres': -20 },
+                'physical_activity': { '5+ séances structurées': 0, '3-4 fois': -3, '1-2 fois': -7, 'Occasionnelle': -12, 'Sédentaire complet': -20 },
+                'activity_type': { 'HIIT + Musculation': 0, 'Cardio + Yoga': -2, 'Marche active': -5, 'Marche tranquille': -8, 'Aucune activité': -15 },
+                'supplements': { 'Protocole complet personnalisé': 0, 'Basiques (Vit D, Omega 3, Magnésium)': -2, 'Occasionnels': -5, 'Jamais': -8, 'Je ne sais pas quoi prendre': -10 },
+                'tracking': { 'Multiple (montre + bague + apps)': 0, 'Montre connectée': -2, 'Application mobile': -4, 'Occasionnel': -7, 'Jamais': -10 },
+                'social_relations': { 'Très riches et nombreuses': 0, 'Satisfaisantes': -3, 'Limitées': -7, 'Difficiles/conflictuelles': -12, 'Isolement social': -18 },
+                'last_vacation': { 'Il y a moins de 3 mois': 0, '3-6 mois': -3, '6-12 mois': -6, 'Plus d\'un an': -10, 'Je ne déconnecte jamais': -15 },
+                'projection_5years': { 'En meilleure forme (j\'optimise déjà)': 5, 'Stable (stagnation)': -5, 'Diminué(e) de 20%': -10, 'Très diminué(e) de 40%': -15, 'J\'ai peur d\'y penser': -20 },
+                'cycle_femme': { 'Régulier sans souci': 0, 'Quelques variations': -3, 'Irrégulier': -7, 'Très douloureux': -12, 'Ménopause/Pré-ménopause': -10 },
+                'libido_homme': { 'Identique ou mieux': 0, '-20% environ': -5, '-40% environ': -10, '-60% environ': -15, 'Quasi inexistante': -20 },
+                'symptoms_femme': { 'Aucun': 0, 'SPM léger': -3, 'Sautes d\'humeur fréquentes': -7, 'Bouffées de chaleur': -10, 'Multiples symptômes': -15 },
+                'muscle_homme': { 'Maintenue ou en gain': 0, 'Légère perte (-5%)': -5, 'Perte visible (-10%)': -10, 'Fonte importante (-20%)': -15, 'Sarcopénie avancée': -20 },
+                'mental_load_femme': { 'Bien équilibrée': 0, 'Gérable': -3, 'Lourde': -7, 'Très lourde': -12, 'Écrasante': -18 },
+                'work_pressure_homme': { 'Stimulante et positive': 0, 'Normale': -3, 'Élevée': -7, 'Très élevée': -12, 'Toxique': -18 }
