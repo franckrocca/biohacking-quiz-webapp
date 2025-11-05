@@ -209,8 +209,14 @@
         }
 
         .screen.active {
-            display: flex;
+            display: block;
             animation: fadeInUp 0.45s ease;
+        }
+
+        @supports (display: flex) {
+            .screen.active {
+                display: flex;
+            }
         }
 
         @keyframes fadeInUp {
@@ -561,6 +567,41 @@
             justify-content: center;
             font-weight: 700;
             color: var(--primary-blue);
+        }
+
+        .eng-subtitle {
+            font-size: 12px;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .eng-body {
+            display: grid;
+            gap: 12px;
+        }
+
+        .eng-intro,
+        .eng-message,
+        .eng-headline,
+        .eng-source {
+            margin: 0;
+        }
+
+        .eng-headline {
+            font-weight: 600;
+            color: var(--primary-blue);
+        }
+
+        .eng-message,
+        .eng-intro {
+            color: var(--text-muted);
+        }
+
+        .eng-source {
+            font-size: 13px;
+            color: var(--text-muted);
         }
 
         .lead-form {
@@ -1428,32 +1469,105 @@
                 ]
             };
 
-            const screenContainer = document.getElementById('screen-container');
-            const progressBar = document.getElementById('progress-bar');
-            const progressCounter = document.getElementById('progress-counter');
-            const progressStage = document.getElementById('progress-stage');
-            const stickyCta = document.getElementById('sticky-cta');
-            const ctaButton = document.getElementById('cta-button');
-            const toastContainer = document.getElementById('toast-container');
+            let screenContainer;
+            let progressBar;
+            let progressCounter;
+            let progressStage;
+            let stickyCta;
+            let ctaButton;
+            let toastContainer;
 
+            const SCREEN_ORDER = CONFIG.screenFlow.map(item => item.id);
             const SCREEN_REFS = new Map();
             const SECTION_INDEX_MAP = {};
             const SECTION_SIZE_MAP = {};
             const QUESTION_IDS = CONFIG.screenFlow.filter(item => item.type === 'question').map(item => item.id);
             const TOTAL_INTERACTIVE_STEPS = CONFIG.screenFlow.filter(item => item.type === 'question' || item.type === 'lead').length;
 
-            let state = createInitialState();
+            let state = null;
             let activeScreenRef = null;
             let multiSelectContext = null;
             let resultsElements = null;
             let lastTrackedProgress = null;
+            let isInitialized = false;
 
-            initializeSectionMaps();
-            loadPersistedState();
-            buildScreens();
-            attachGlobalListeners();
-            updateProgressUI();
-            showInitialScreen();
+            function bootQuiz() {
+                try {
+                    initTrackingStubs();
+                    initQuiz();
+                } catch (error) {
+                    console.error('Erreur lors de l\'initialisation du quiz', error);
+                }
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', bootQuiz);
+            } else {
+                bootQuiz();
+            }
+
+            function initTrackingStubs() {
+                if (!Array.isArray(window.dataLayer)) {
+                    window.dataLayer = [];
+                }
+                if (typeof window.fbq !== 'function') {
+                    window.fbq = function fbqStub() {
+                        console.debug('[fbq stub]', Array.from(arguments));
+                    };
+                }
+                if (typeof window.gtag !== 'function') {
+                    window.gtag = function gtagStub() {
+                        console.debug('[gtag stub]', Array.from(arguments));
+                    };
+                }
+            }
+
+            function initQuiz() {
+                if (isInitialized) {
+                    return;
+                }
+
+                screenContainer = document.getElementById('screen-container');
+                progressBar = document.getElementById('progress-bar');
+                progressCounter = document.getElementById('progress-counter');
+                progressStage = document.getElementById('progress-stage');
+                stickyCta = document.getElementById('sticky-cta');
+                ctaButton = document.getElementById('cta-button');
+                toastContainer = document.getElementById('toast-container');
+
+                if (!screenContainer) {
+                    console.warn('Impossible d\'initialiser le quiz : container introuvable.');
+                    return;
+                }
+
+                state = createInitialState();
+                activeScreenRef = null;
+                multiSelectContext = null;
+                resultsElements = null;
+                lastTrackedProgress = null;
+
+                SCREEN_REFS.clear();
+                SCREEN_IDS.length = 0;
+                Object.keys(SECTION_INDEX_MAP).forEach(key => delete SECTION_INDEX_MAP[key]);
+                Object.keys(SECTION_SIZE_MAP).forEach(key => delete SECTION_SIZE_MAP[key]);
+
+                screenContainer.innerHTML = '';
+
+                initializeSectionMaps();
+                loadPersistedState();
+                buildScreens();
+                attachGlobalListeners();
+                updateProgressUI();
+
+                const firstScreenId = SCREEN_ORDER[0];
+                if (firstScreenId && SCREEN_REFS.has(firstScreenId)) {
+                    goToScreen(firstScreenId);
+                } else {
+                    console.warn('Aucun écran initial disponible.', SCREEN_ORDER);
+                }
+
+                isInitialized = true;
+            }
 
             function createInitialState() {
                 return {
@@ -1571,32 +1685,50 @@
             }
 
             function buildScreens() {
+                if (!screenContainer) {
+                    console.warn('Container d\'écran introuvable, construction annulée.');
+                    return;
+                }
                 CONFIG.screenFlow.forEach((item, index) => {
                     const screenElement = createScreenElement(item, index);
+                    if (!screenElement) {
+                        console.warn('Écran ignoré : création impossible pour', item);
+                        return;
+                    }
                     screenContainer.appendChild(screenElement);
-                    SCREEN_REFS.set(item.id, {
+                    const reference = {
                         element: screenElement,
                         config: item
-                    });
+                    };
+                    if (item.type === 'engagement') {
+                        const nodes = renderEngagementScreen(item, screenElement);
+                        if (nodes) {
+                            reference.nodes = nodes;
+                        }
+                    }
+                    SCREEN_REFS.set(item.id, reference);
                     SCREEN_IDS.push(item.id);
                 });
             }
 
             function attachGlobalListeners() {
-                ctaButton.addEventListener('click', () => {
-                    if (!multiSelectContext) {
-                        return;
-                    }
-                    confirmMultiSelection();
-                });
+                if (ctaButton) {
+                    ctaButton.addEventListener('click', () => {
+                        if (!multiSelectContext) {
+                            return;
+                        }
+                        confirmMultiSelection();
+                    });
+                }
 
                 window.addEventListener('beforeunload', () => {
-                    if (!state.finalScore) {
-                        trackEvent('quiz_abandon', {
-                            progressPercent: getProgressPercent(),
-                            screenId: state.currentScreenId
-                        });
+                    if (!state || state.finalScore) {
+                        return;
                     }
+                    trackEvent('quiz_abandon', {
+                        progressPercent: getProgressPercent(),
+                        screenId: state.currentScreenId
+                    });
                 });
             }
 
@@ -1605,6 +1737,9 @@
             }
 
             function createScreenElement(item, index) {
+                if (!item || !item.id) {
+                    return null;
+                }
                 const section = document.createElement('section');
                 section.className = 'screen';
                 section.id = `screen-${item.id}`;
@@ -1612,18 +1747,32 @@
                 section.setAttribute('data-screen-type', item.type);
                 section.setAttribute('tabindex', '-1');
 
+                if (item.type === 'engagement') {
+                    section.classList.add('screen-engagement');
+                    section.innerHTML = `
+                        <article class="engagement-card">
+                            <p class="eng-subtitle" aria-live="polite"></p>
+                            <h2 class="eng-title"></h2>
+                            <div class="eng-body"></div>
+                            <button type="button" class="btn btn-primary btn-continue">Continuer</button>
+                        </article>
+                    `;
+                    return section;
+                }
+
                 if (item.type === 'landing') {
                     renderLandingScreen(section);
                 } else if (item.type === 'question') {
                     renderQuestionScreen(section, CONFIG.questions[item.id]);
-                } else if (item.type === 'engagement') {
-                    renderEngagementScreen(section, item);
                 } else if (item.type === 'lead') {
                     renderLeadScreen(section);
                 } else if (item.type === 'loading') {
                     renderLoadingScreen(section);
                 } else if (item.type === 'results') {
                     renderResultsScreen(section);
+                } else {
+                    console.warn('Type d\'écran non géré', item);
+                    return null;
                 }
 
                 return section;
@@ -1861,34 +2010,46 @@
                 });
             }
 
-            function renderEngagementScreen(section, item) {
-                section.classList.add('engagement');
-                section.innerHTML = `
-                    <div class="engagement-card">
-                        <div class="eyebrow" data-ref="eyebrow">Moment inspiration</div>
-                        <h2 data-ref="title">Pause d\'inspiration</h2>
-                        <p data-ref="message">Nous personnalisons votre expérience.</p>
-                        <div class="engagement-highlights" data-ref="highlights"></div>
-                        <div class="immediate-feedback" data-ref="extra"></div>
-                        <button type="button" class="btn btn-primary" data-ref="cta">Continuer</button>
-                    </div>
-                `;
+            function renderEngagementScreen(cfg, container) {
+                if (!container) {
+                    console.warn('Impossible de rendre l\'écran d\'engagement : container manquant.', cfg);
+                    return null;
+                }
 
-                const eyebrow = section.querySelector('[data-ref="eyebrow"]');
-                const title = section.querySelector('[data-ref="title"]');
-                const message = section.querySelector('[data-ref="message"]');
-                const highlights = section.querySelector('[data-ref="highlights"]');
-                const extra = section.querySelector('[data-ref="extra"]');
-                const cta = section.querySelector('[data-ref="cta"]');
+                const nodes = cfg.nodes || (cfg.nodes = {});
+                nodes.subtitle = container.querySelector('.eng-subtitle') || null;
+                nodes.title = container.querySelector('.eng-title') || null;
+                nodes.body = container.querySelector('.eng-body') || null;
+                nodes.button = container.querySelector('.btn-continue') || null;
 
-                SCREEN_REFS.get(item.id).nodes = { eyebrow, title, message, highlights, extra, cta };
+                const engagementBlueprint = cfg.key ? CONFIG.engagementScreens[cfg.key] : null;
 
-                cta.addEventListener('click', () => {
-                    trackEvent('engagement_continue', {
-                        screenId: item.id
-                    });
-                    goToNextScreen();
-                });
+                if (nodes.subtitle) {
+                    nodes.subtitle.textContent = engagementBlueprint?.eyebrow || '';
+                }
+
+                if (nodes.title) {
+                    nodes.title.textContent = '';
+                }
+
+                if (nodes.body) {
+                    nodes.body.innerHTML = '';
+                }
+
+                if (nodes.button) {
+                    nodes.button.textContent = engagementBlueprint?.ctaLabel || 'Continuer';
+                    nodes.button.onclick = () => {
+                        trackEvent('engagement_continue', {
+                            screenId: cfg.id,
+                            key: cfg.key || null
+                        });
+                        goToNextStep();
+                    };
+                } else {
+                    console.warn('Bouton de continuité introuvable pour l\'écran d\'engagement', cfg);
+                }
+
+                return nodes;
             }
 
             function renderLeadScreen(section) {
@@ -2217,6 +2378,10 @@
                 showScreenByIndex(nextIndex);
             }
 
+            function goToNextStep() {
+                goToNextScreen();
+            }
+
             function getScreenIndexById(id) {
                 return CONFIG.screenFlow.findIndex(item => item.id === id);
             }
@@ -2226,6 +2391,10 @@
                 if (index >= 0) {
                     showScreenByIndex(index);
                 }
+            }
+
+            function goToScreen(id) {
+                showScreenById(id);
             }
 
             function showScreenByIndex(index) {
@@ -2307,35 +2476,107 @@
 
             function populateEngagementScreen(item, ref) {
                 const engagementConfig = CONFIG.engagementScreens[item.key];
-                if (!engagementConfig) return;
-                const data = engagementConfig.compute(state, CONFIG) || {};
-                const nodes = ref.nodes;
-                if (!nodes) return;
-
-                nodes.eyebrow.textContent = engagementConfig.eyebrow || 'Insight';
-                nodes.title.textContent = data.title || 'Inspiration';
-                nodes.message.textContent = data.message || data.intro || '';
-                nodes.extra.textContent = data.takeaway || '';
-
-                nodes.highlights.innerHTML = '';
-                if (Array.isArray(data.highlights)) {
-                    data.highlights.forEach(item => {
-                        const line = document.createElement('div');
-                        line.className = 'engagement-highlight';
-                        line.innerHTML = `<span>${item.icon || '•'}</span><div>${item.text}</div>`;
-                        nodes.highlights.appendChild(line);
-                    });
+                if (!engagementConfig) {
+                    console.warn('Configuration d\'engagement introuvable pour', item);
+                    return;
                 }
 
-                nodes.cta.textContent = engagementConfig.ctaLabel || 'Continuer';
+                const nodes = ref?.nodes || engagementConfig.nodes || renderEngagementScreen(item, ref?.element);
+                if (!nodes) {
+                    console.warn('Impossible de mettre à jour l\'écran d\'engagement : nœuds manquants.', item);
+                    return;
+                }
+
+                ref.nodes = nodes;
+                engagementConfig.nodes = nodes;
+
+                const payload = typeof engagementConfig.compute === 'function'
+                    ? engagementConfig.compute(state, CONFIG) || {}
+                    : {};
+
+                const subtitleText = payload.eyebrow || engagementConfig.eyebrow || '';
+                const titleText = payload.title || payload.headline || 'Inspiration';
+
+                if (nodes.subtitle) {
+                    nodes.subtitle.textContent = subtitleText;
+                }
+
+                if (nodes.title) {
+                    nodes.title.textContent = titleText;
+                }
+
+                if (nodes.button) {
+                    nodes.button.textContent = engagementConfig.ctaLabel || 'Continuer';
+                }
+
+                if (nodes.body) {
+                    nodes.body.innerHTML = '';
+
+                    if (payload.intro) {
+                        const intro = document.createElement('p');
+                        intro.className = 'eng-intro';
+                        intro.textContent = payload.intro;
+                        nodes.body.appendChild(intro);
+                    }
+
+                    if (payload.message) {
+                        const message = document.createElement('p');
+                        message.className = 'eng-message';
+                        message.textContent = payload.message;
+                        nodes.body.appendChild(message);
+                    }
+
+                    if (payload.headline && payload.headline !== titleText) {
+                        const headline = document.createElement('p');
+                        headline.className = 'eng-headline';
+                        headline.textContent = payload.headline;
+                        nodes.body.appendChild(headline);
+                    }
+
+                    if (Array.isArray(payload.highlights) && payload.highlights.length) {
+                        const highlightContainer = document.createElement('div');
+                        highlightContainer.className = 'engagement-highlights';
+                        payload.highlights.forEach(entry => {
+                            const highlight = document.createElement('div');
+                            highlight.className = 'engagement-highlight';
+
+                            const icon = document.createElement('span');
+                            icon.textContent = entry?.icon || '•';
+
+                            const text = document.createElement('div');
+                            text.textContent = entry?.text || '';
+
+                            highlight.append(icon, text);
+                            highlightContainer.appendChild(highlight);
+                        });
+                        nodes.body.appendChild(highlightContainer);
+                    }
+
+                    if (payload.takeaway) {
+                        const takeaway = document.createElement('div');
+                        takeaway.className = 'immediate-feedback';
+                        takeaway.textContent = payload.takeaway;
+                        nodes.body.appendChild(takeaway);
+                    }
+
+                    if (payload.source) {
+                        const source = document.createElement('p');
+                        source.className = 'eng-source microcopy';
+                        source.textContent = payload.source;
+                        nodes.body.appendChild(source);
+                    }
+                }
 
                 trackEvent('engagement_view', {
                     screenId: engagementConfig.id,
-                    title: data.title
+                    title: titleText
                 });
             }
 
             function updateProgressStage(item) {
+                if (!progressBar || !progressCounter || !progressStage || !progressBar.parentElement) {
+                    return;
+                }
                 const percent = getProgressPercent();
                 progressBar.style.width = `${percent}%`;
                 progressBar.parentElement.setAttribute('aria-valuenow', String(Math.round(percent)));
@@ -2376,6 +2617,9 @@
             }
 
             function updateProgressUI() {
+                if (!progressBar || !progressCounter || !progressBar.parentElement) {
+                    return;
+                }
                 const percent = getProgressPercent();
                 progressBar.style.width = `${percent}%`;
                 progressCounter.textContent = `${Math.round(percent)}%`;
