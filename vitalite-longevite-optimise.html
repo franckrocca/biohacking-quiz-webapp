@@ -1,0 +1,2803 @@
+<!DOCTYPE html>
+<!--
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                              README - VERSION 2.0.0                          ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║  Produit : Quiz Vitalité & Longévité Optimisé (BetterMe-inspired)            ║
+║  Format  : Fichier autonome (HTML + CSS + JS inline)                          ║
+║  Langue  : Français                                                           ║
+║                                                                              ║
+║  ✅ Ce qui est inclus                                                         ║
+║  ───────────────────────────────────────────────────────────────────────────  ║
+║  • Flow revu mobile-first avec micro-interactions et CTA sticky               ║
+║  • Barre de progression explicite + étapes nommées                            ║
+║  • Écrans intermédiaires d'engagement (épiphanie, statistique, validation)    ║
+║  • Question IMC avec sliders, saisie directe, jauge OMS colorée et insight    ║
+║  • Tracking événementiel étendu (fallback console.log)                        ║
+║  • Scoring pondéré par dimension scientifique + profil personnalisé           ║
+║  • Résultats visuels (badges forces / risques, recommandations hiérarchisées) ║
+║  • Soumission Google Sheets enrichie (payload complet + retries/backoff)      ║
+║  • Notification email configurée via Apps Script (voir dossier apps-script)   ║
+║  • Stockage local 24h + reprise session                                       ║
+║                                                                              ║
+║  🚀 Mise en service                                                           ║
+║  ───────────────────────────────────────────────────────────────────────────  ║
+║  1. Remplacez CONFIG.endpoints.googleScriptUrl par votre URL Apps Script.     ║
+║  2. Ajustez CONFIG.notifications.emails / subject selon vos destinataires.    ║
+║  3. Mettez à jour CONFIG.cta.url pour pointer vers votre Calendly/CTA.        ║
+║  4. Personnalisez couleurs/typo via les variables CSS (section :root).        ║
+║  5. (Optionnel) Activez GA4/Meta en branchant trackEvent dans vos outils.     ║
+║                                                                              ║
+║  📂 Backend Apps Script                                                       ║
+║  ───────────────────────────────────────────────────────────────────────────  ║
+║  • Un exemple de script est fourni dans /apps-script/leadReceiver.gs          ║
+║  • Instructions de déploiement : /apps-script/README.md                        ║
+║  • Le payload contient : meta, tracking, lead, réponses, scoring, insights     ║
+║    et préférences de notification (emails).                                   ║
+║                                                                              ║
+║  🛡️ RGPD & accessibilité                                                      ║
+║  ───────────────────────────────────────────────────────────────────────────  ║
+║  • Consentement explicite requis avant soumission                             ;;^ 
+║  • noindex/nofollow pour éviter l'indexation                                  ║
+║  • Navigation clavier, focus visible, aria-live pour feedbacks                ║
+║                                                                              ║
+║  ℹ️ Support                                                                    ║
+║  ───────────────────────────────────────────────────────────────────────────  ║
+║  • Contact : studio@oralife.com (placeholder)                                  ║
+║  • Version : 2.0.0 (branch feat/quiz-vitalite-longévite-ux-imc-sheets-email)    ║
+║                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+-->
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Quiz Vitalité &amp; Longévité Optimisé</title>
+    <style>
+        :root {
+            --primary-blue: #000324;
+            --accent-green: #01FF00;
+            --accent-green-dark: #00D400;
+            --sky-blue: #3EC5FF;
+            --text-dark: #1A1A1A;
+            --text-muted: #5F6B7A;
+            --surface: #FFFFFF;
+            --surface-soft: #F5F7FA;
+            --surface-strong: #E6EDF5;
+            --shadow-soft: 0 15px 45px rgba(0, 3, 36, 0.08);
+            --shadow-card: 0 20px 55px rgba(0, 3, 36, 0.12);
+            --border-radius-lg: 24px;
+            --border-radius-md: 14px;
+            --border-radius-sm: 12px;
+            --transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            --focus-ring: 0 0 0 3px rgba(1, 255, 0, 0.35);
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            padding: 0;
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            color: var(--text-dark);
+            background: radial-gradient(115% 115% at 85% -10%, rgba(1, 255, 0, 0.22) 0%, transparent 58%),
+                        radial-gradient(95% 95% at -15% 20%, rgba(0, 3, 36, 0.08) 0%, transparent 70%),
+                        #F1F5FB;
+            min-height: 100vh;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+        }
+
+        .app-shell {
+            width: 100%;
+            max-width: 960px;
+            padding-bottom: 72px;
+        }
+
+        .quiz-header {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            backdrop-filter: blur(12px);
+            background: rgba(255, 255, 255, 0.92);
+            border-bottom: 1px solid rgba(0, 3, 36, 0.06);
+            box-shadow: 0 12px 30px rgba(0, 3, 36, 0.04);
+        }
+
+        .header-inner {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px clamp(16px, 4vw, 32px);
+            gap: 12px;
+        }
+
+        .brand {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .brand-logo {
+            font-size: clamp(22px, 4vw, 28px);
+            font-weight: 800;
+            letter-spacing: -0.4px;
+            background: linear-gradient(135deg, var(--primary-blue), #06145C);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .brand-subtitle {
+            font-size: 13px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .progress-meta {
+            position: relative;
+            text-align: right;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
+        .progress-percentage {
+            font-size: clamp(18px, 4vw, 22px);
+            font-weight: 700;
+            color: var(--primary-blue);
+        }
+
+        .progress-stage {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .progress-track {
+            position: relative;
+            margin: 0 clamp(16px, 4vw, 32px) 16px;
+            height: 8px;
+            border-radius: 999px;
+            background: rgba(0, 3, 36, 0.08);
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            position: absolute;
+            inset: 0;
+            width: 0%;
+            background: linear-gradient(90deg, var(--primary-blue), var(--accent-green));
+            box-shadow: inset 0 0 12px rgba(1, 255, 0, 0.25);
+            transition: width 0.45s ease;
+        }
+
+        .screen-container {
+            padding: clamp(28px, 6vw, 48px) clamp(16px, 5vw, 48px) 32px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .screen {
+            display: none;
+            flex-direction: column;
+            gap: clamp(20px, 3vw, 28px);
+            background: var(--surface);
+            box-shadow: var(--shadow-soft);
+            border-radius: var(--border-radius-lg);
+            padding: clamp(24px, 6vw, 48px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .screen::after {
+            content: "";
+            position: absolute;
+            width: 240px;
+            height: 240px;
+            border-radius: 50%;
+            top: -120px;
+            right: -120px;
+            background: rgba(1, 255, 0, 0.08);
+            filter: blur(0);
+        }
+
+        .screen.active {
+            display: flex;
+            animation: fadeInUp 0.45s ease;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(24px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .eyebrow {
+            text-transform: uppercase;
+            letter-spacing: 1.4px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .screen h1,
+        .screen h2,
+        .screen h3 {
+            margin: 0;
+            font-weight: 700;
+            color: var(--primary-blue);
+            letter-spacing: -0.4px;
+        }
+
+        .screen h1 {
+            font-size: clamp(26px, 5vw, 36px);
+            line-height: 1.15;
+        }
+
+        .screen h2 {
+            font-size: clamp(22px, 4vw, 28px);
+            line-height: 1.22;
+        }
+
+        .screen h3 {
+            font-size: clamp(18px, 3vw, 22px);
+        }
+
+        .screen p {
+            margin: 0;
+            color: var(--text-muted);
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        .benefits {
+            display: grid;
+            gap: 14px;
+        }
+
+        .benefit-chip {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            border-radius: var(--border-radius-sm);
+            background: var(--surface-soft);
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 15px;
+        }
+
+        .benefit-chip span {
+            display: inline-flex;
+            width: 32px;
+            height: 32px;
+            border-radius: 12px;
+            align-items: center;
+            justify-content: center;
+            background: rgba(1, 255, 0, 0.16);
+            color: var(--primary-blue);
+            font-weight: 700;
+        }
+
+        .start-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .btn {
+            border: none;
+            cursor: pointer;
+            border-radius: 999px;
+            font-weight: 700;
+            font-size: 16px;
+            padding: 16px 28px;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(140deg, var(--primary-blue), #06145C 45%, var(--accent-green));
+            color: white;
+            box-shadow: 0 22px 44px rgba(0, 3, 36, 0.18);
+        }
+
+        .btn-primary:hover,
+        .btn-primary:focus-visible {
+            transform: translateY(-1px);
+            box-shadow: 0 28px 55px rgba(0, 3, 36, 0.24);
+            outline: none;
+        }
+
+        .btn-secondary {
+            background: rgba(0, 3, 36, 0.05);
+            color: var(--primary-blue);
+            border: 1px solid rgba(0, 3, 36, 0.12);
+        }
+
+        .btn-secondary:hover,
+        .btn-secondary:focus-visible {
+            background: rgba(0, 3, 36, 0.08);
+            outline: none;
+            box-shadow: var(--focus-ring);
+        }
+
+        .microcopy {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .option-grid {
+            display: grid;
+            gap: 14px;
+        }
+
+        .option-card {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            border-radius: var(--border-radius-md);
+            padding: 18px 20px;
+            background: var(--surface-soft);
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: var(--transition);
+            outline: none;
+        }
+
+        .option-card[data-selected="true"] {
+            background: linear-gradient(120deg, rgba(1, 255, 0, 0.18), rgba(0, 3, 36, 0.08));
+            border-color: rgba(1, 255, 0, 0.6);
+            box-shadow: 0 12px 48px rgba(0, 3, 36, 0.12);
+        }
+
+        .option-card:hover,
+        .option-card:focus-visible {
+            transform: translateY(-2px);
+            border-color: rgba(0, 3, 36, 0.08);
+            box-shadow: 0 10px 30px rgba(0, 3, 36, 0.12);
+        }
+
+        .option-title {
+            font-weight: 700;
+            color: var(--primary-blue);
+            font-size: 17px;
+        }
+
+        .badge-tonality {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .option-description {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .immediate-feedback {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 14px;
+            background: rgba(0, 3, 36, 0.05);
+            border-radius: var(--border-radius-sm);
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .bmi-wrapper {
+            display: grid;
+            gap: 22px;
+        }
+
+        .bmi-inputs {
+            display: grid;
+            gap: 20px;
+        }
+
+        .input-group {
+            display: grid;
+            gap: 12px;
+        }
+
+        .input-group label {
+            font-weight: 600;
+            color: var(--primary-blue);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .range-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 92px;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .range-row input[type="range"] {
+            width: 100%;
+        }
+
+        .range-row input[type="number"] {
+            width: 100%;
+            border-radius: 12px;
+            border: 1px solid rgba(0, 3, 36, 0.15);
+            background: white;
+            padding: 12px 14px;
+            font-size: 16px;
+            color: var(--primary-blue);
+        }
+
+        .range-row input[type="number"]:focus-visible {
+            outline: none;
+            box-shadow: var(--focus-ring);
+        }
+
+        .bmi-visual {
+            background: var(--surface-soft);
+            border-radius: 18px;
+            padding: 18px;
+            display: grid;
+            gap: 12px;
+            border: 1px solid rgba(0, 3, 36, 0.08);
+        }
+
+        .bmi-scale {
+            position: relative;
+            height: 18px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #88C7FF 0%, #6CE490 32%, #F5C04D 60%, #F5806B 82%, #E94B3C 100%);
+        }
+
+        .bmi-pointer {
+            position: absolute;
+            top: 50%;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: white;
+            border: 3px solid var(--primary-blue);
+            transform: translate(-50%, -50%);
+            box-shadow: 0 6px 15px rgba(0, 3, 36, 0.18);
+            transition: left 0.35s ease;
+        }
+
+        .bmi-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .bmi-legend {
+            display: grid;
+            gap: 8px;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 8px;
+        }
+
+        .sticky-cta {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: min(100%, 960px);
+            padding: 12px clamp(16px, 4vw, 32px) calc(env(safe-area-inset-bottom) + 12px);
+            background: rgba(255, 255, 255, 0.95);
+            border-top: 1px solid rgba(0, 3, 36, 0.08);
+            display: flex;
+            justify-content: flex-end;
+            box-shadow: 0 -10px 30px rgba(0, 3, 36, 0.08);
+            z-index: 100;
+        }
+
+        .sticky-cta.hidden {
+            display: none;
+        }
+
+        .sticky-cta .btn {
+            width: 100%;
+        }
+
+        .engagement-card {
+            background: linear-gradient(130deg, rgba(1, 255, 0, 0.14) 0%, rgba(0, 3, 36, 0.06) 100%);
+            border-radius: 22px;
+            padding: clamp(22px, 5vw, 36px);
+            display: grid;
+            gap: 16px;
+        }
+
+        .engagement-highlights {
+            display: grid;
+            gap: 12px;
+        }
+
+        .engagement-highlight {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+        }
+
+        .engagement-highlight span {
+            display: inline-flex;
+            width: 28px;
+            height: 28px;
+            border-radius: 12px;
+            background: rgba(0, 3, 36, 0.08);
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: var(--primary-blue);
+        }
+
+        .lead-form {
+            display: grid;
+            gap: 18px;
+        }
+
+        .form-row {
+            display: grid;
+            gap: 12px;
+        }
+
+        @media (min-width: 680px) {
+            .form-row.two-cols {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 18px;
+            }
+        }
+
+        label {
+            font-weight: 600;
+            color: var(--primary-blue);
+            display: inline-flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="tel"],
+        input[type="date"],
+        select {
+            width: 100%;
+            padding: 14px 16px;
+            border-radius: 14px;
+            border: 1px solid rgba(0, 3, 36, 0.14);
+            font-size: 16px;
+            color: var(--primary-blue);
+            background: white;
+            transition: var(--transition);
+        }
+
+        input:focus-visible,
+        select:focus-visible,
+        textarea:focus-visible {
+            outline: none;
+            box-shadow: var(--focus-ring);
+            border-color: rgba(1, 255, 0, 0.6);
+        }
+
+        .consent-field {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .consent-field input {
+            margin-top: 4px;
+        }
+
+        .status-message {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .loading-visual {
+            display: grid;
+            gap: 16px;
+            justify-items: center;
+            text-align: center;
+            padding: 32px 0;
+        }
+
+        .spinner {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            border: 6px solid rgba(1, 255, 0, 0.2);
+            border-top-color: var(--accent-green);
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .results-header {
+            display: grid;
+            gap: 18px;
+            text-align: center;
+        }
+
+        .score-circle {
+            width: 164px;
+            height: 164px;
+            margin: 0 auto;
+            border-radius: 50%;
+            background: conic-gradient(var(--accent-green) 0deg, rgba(1, 255, 0, 0.25) 0deg);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: var(--primary-blue);
+            font-weight: 800;
+            font-size: 42px;
+            position: relative;
+            box-shadow: 0 20px 60px rgba(0, 3, 36, 0.18);
+        }
+
+        .score-circle span {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .badges-grid {
+            display: grid;
+            gap: 14px;
+        }
+
+        .metric-badge {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 16px;
+            border-radius: var(--border-radius-sm);
+            background: var(--surface-soft);
+            border: 1px solid rgba(0, 3, 36, 0.06);
+            font-size: 15px;
+            color: var(--text-muted);
+        }
+
+        .metric-badge strong {
+            color: var(--primary-blue);
+        }
+
+        .list-card ul {
+            margin: 0;
+            padding-left: 20px;
+            display: grid;
+            gap: 8px;
+            color: var(--text-muted);
+        }
+
+        .recommendation {
+            display: grid;
+            gap: 12px;
+            padding: 18px 20px;
+            border-radius: var(--border-radius-md);
+            background: rgba(0, 3, 36, 0.05);
+        }
+
+        .recommendation[data-priority="high"] {
+            border-left: 4px solid var(--accent-green);
+            background: linear-gradient(130deg, rgba(1, 255, 0, 0.18), rgba(0,3,36,0.05));
+        }
+
+        .cta-result {
+            margin-top: 8px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            border-radius: 14px;
+            padding: 14px 20px;
+            background: linear-gradient(140deg, var(--primary-blue), #08216D 50%, var(--accent-green));
+            color: white;
+            font-weight: 700;
+            text-decoration: none;
+            justify-content: center;
+            transition: var(--transition);
+        }
+
+        .cta-result:hover,
+        .cta-result:focus-visible {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 40px rgba(0, 3, 36, 0.28);
+            outline: none;
+        }
+
+        .toast {
+            position: fixed;
+            top: 18px;
+            right: 18px;
+            background: var(--primary-blue);
+            color: white;
+            padding: 14px 18px;
+            border-radius: 14px;
+            box-shadow: 0 18px 40px rgba(0, 3, 36, 0.22);
+            z-index: 999;
+            opacity: 0;
+            transform: translateY(-12px);
+            pointer-events: none;
+            transition: var(--transition);
+        }
+
+        .toast.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .toast[data-tone="error"] {
+            background: #E94B3C;
+        }
+
+        .toast[data-tone="success"] {
+            background: var(--accent-green-dark);
+            color: var(--primary-blue);
+        }
+
+        .resume-banner {
+            margin-top: 16px;
+            padding: 16px 18px;
+            border-radius: var(--border-radius-md);
+            background: rgba(0, 3, 36, 0.06);
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .resume-banner button {
+            padding: 12px 18px;
+            border-radius: 999px;
+            border: none;
+            background: linear-gradient(120deg, var(--primary-blue), var(--accent-green));
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .resume-banner button:hover,
+        .resume-banner button:focus-visible {
+            transform: translateY(-1px);
+            outline: none;
+        }
+
+        .disclaimer {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-align: center;
+            margin-top: 18px;
+        }
+
+        @media (min-width: 720px) {
+            .benefits {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .option-grid.two-cols {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .screen-container {
+                padding: 96px 16px 96px;
+            }
+
+            .screen {
+                padding: 22px 20px;
+                border-radius: 20px;
+            }
+
+            .progress-track {
+                margin-left: 16px;
+                margin-right: 16px;
+            }
+
+            .sticky-cta {
+                border-top-left-radius: 20px;
+                border-top-right-radius: 20px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-shell">
+        <header class="quiz-header" aria-live="polite">
+            <div class="header-inner">
+                <div class="brand">
+                    <span class="brand-logo">OraLife</span>
+                    <span class="brand-subtitle">Vitalité &amp; longévité</span>
+                </div>
+                <div class="progress-meta">
+                    <span id="progress-counter" class="progress-percentage">0%</span>
+                    <span id="progress-stage" class="progress-stage">Prêt à commencer</span>
+                </div>
+            </div>
+            <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                <div id="progress-bar" class="progress-fill"></div>
+            </div>
+        </header>
+        <main id="screen-container" class="screen-container" tabindex="-1"></main>
+        <div id="sticky-cta" class="sticky-cta hidden" role="region" aria-live="polite">
+            <button id="cta-button" class="btn btn-primary" type="button">Continuer</button>
+        </div>
+    </div>
+    <div id="toast-container" aria-live="assertive" aria-atomic="true"></div>
+    <script>
+        (function () {
+            const STORAGE_KEY = 'oralife_vitalite_longevite_state_v2';
+            const SCREEN_IDS = [];
+
+            const CONFIG = {
+                meta: {
+                    quizId: 'vitalite_longevite_optimise',
+                    version: '2.0.0',
+                    brand: 'OraLife',
+                    title: 'Quiz Vitalité & Longévité',
+                    language: 'fr',
+                    storageTtlHours: 24
+                },
+                endpoints: {
+                    googleScriptUrl: 'https://script.google.com/macros/s/APP_SCRIPT_URL_A_REMPLACER/exec'
+                },
+                notifications: {
+                    emails: ['notifications@oralife.com'],
+                    subject: 'Nouvelle demande - Quiz Vitalité & Longévité'
+                },
+                cta: {
+                    label: 'Réserver mon diagnostic offert',
+                    url: 'https://calendly.com/votre-compte/diagnostic-oralife'
+                },
+                dimensions: {
+                    body: { id: 'body', label: 'Biomarqueurs métaboliques' },
+                    sleep: { id: 'sleep', label: 'Sommeil réparateur' },
+                    stress: { id: 'stress', label: 'Gestion du stress' },
+                    activity: { id: 'activity', label: 'Activation physique' },
+                    nutrition: { id: 'nutrition', label: 'Nutrition intelligente' },
+                    energy: { id: 'energy', label: 'Énergie quotidienne' },
+                    social: { id: 'social', label: 'Relations & mental' }
+                },
+                weights: {
+                    body: 9,
+                    sleep: 10,
+                    stress: 10,
+                    activity: 9,
+                    nutrition: 8,
+                    energy: 7,
+                    social: 6
+                },
+                statLibrary: [
+                    {
+                        title: '80 % des adultes européens manquent de magnésium, clé pour l’énergie cellulaire.',
+                        source: 'Source : EFSA, 2022.'
+                    },
+                    {
+                        title: 'Une nuit à moins de 6 h augmente de 24 % le risque cardio-métabolique.',
+                        source: 'Source : JACC, 2019.'
+                    },
+                    {
+                        title: 'Bouger 20 minutes par jour réduit de 30 % le risque de mortalité prématurée.',
+                        source: 'Source : WHO Guidelines, 2021.'
+                    }
+                ],
+                questions: {
+                    gender: {
+                        id: 'gender',
+                        type: 'single',
+                        dimension: null,
+                        section: 'profil',
+                        sectionLabel: 'Profil',
+                        headline: 'Nous parlons à qui aujourd\'hui ?',
+                        description: 'Pour personnaliser votre diagnostic, sélectionnez l\'identité qui vous correspond le mieux.',
+                        options: [
+                            { value: 'female', label: 'Femme', description: 'Je souhaite intégrer mes spécificités hormonales.', tone: 'Profil' },
+                            { value: 'male', label: 'Homme', description: 'Je veux optimiser mes performances sur la durée.', tone: 'Profil' },
+                            { value: 'other', label: 'Autre / je préfère ne pas dire', description: 'Peu importe : nous personnalisons la suite.', tone: 'Profil' }
+                        ]
+                    },
+                    age_range: {
+                        id: 'age_range',
+                        type: 'single',
+                        dimension: null,
+                        section: 'profil',
+                        sectionLabel: 'Profil',
+                        headline: 'Quel est votre âge ?',
+                        description: 'Nous adaptons nos recommandations selon votre cycle de vie.',
+                        options: [
+                            { value: '18_29', label: '18-29 ans', description: 'Je veux prendre de l\'avance sur ma santé.', tone: 'Momentum' },
+                            { value: '30_39', label: '30-39 ans', description: 'Je veux rester au top malgré un rythme intense.', tone: 'Momentum' },
+                            { value: '40_49', label: '40-49 ans', description: 'Je veux inverser les premiers signaux de fatigue.', tone: 'Momentum' },
+                            { value: '50_59', label: '50-59 ans', description: 'Je veux prolonger ma vitalité et ma liberté.', tone: 'Momentum' },
+                            { value: '60_plus', label: '60 ans et +', description: 'Je veux continuer à rayonner durablement.', tone: 'Momentum' }
+                        ]
+                    },
+                    bmi: {
+                        id: 'bmi',
+                        type: 'bmi',
+                        dimension: 'body',
+                        section: 'profil',
+                        sectionLabel: 'Profil',
+                        headline: 'Quel est votre duo taille + poids ?',
+                        description: 'Glissez les curseurs ou saisissez vos chiffres pour découvrir votre zone métabolique actuelle.',
+                        minHeight: 140,
+                        maxHeight: 210,
+                        minWeight: 40,
+                        maxWeight: 160,
+                        defaultHeight: 170,
+                        defaultWeight: 68
+                    },
+                    sleep_quality: {
+                        id: 'sleep_quality',
+                        type: 'single',
+                        dimension: 'sleep',
+                        section: 'habitudes',
+                        sectionLabel: 'Sommeil & récupération',
+                        headline: 'Comment qualifiez-vous la qualité de votre sommeil ?',
+                        description: 'Un sommeil profond est le socle de votre régénération cellulaire.',
+                        options: [
+                            { value: 'excellent', label: 'Je dors profondément 7-8h', description: 'Endormissement rapide, réveil frais.', tone: 'Force', score: 100 },
+                            { value: 'good', label: 'Plutôt bon', description: 'Quelques micro-réveils mais je récupère.', tone: 'Solide', score: 85 },
+                            { value: 'ok', label: 'Inégal', description: 'Je dors mais je ne me sens pas toujours reposé(e).', tone: 'À optimiser', score: 65 },
+                            { value: 'poor', label: 'Agité', description: 'Endormissement long, réveils fréquents.', tone: 'Alerte', score: 45 },
+                            { value: 'insomnia', label: 'Sévère', description: 'Moins de 5h par nuit ou insomnie chronique.', tone: 'Prioritaire', score: 25 }
+                        ]
+                    },
+                    sleep_interruptions: {
+                        id: 'sleep_interruptions',
+                        type: 'single',
+                        dimension: 'sleep',
+                        section: 'habitudes',
+                        sectionLabel: 'Sommeil & récupération',
+                        headline: 'Vous réveillez-vous la nuit ?',
+                        description: 'La fragmentation du sommeil perturbe l\'équilibre hormonal.',
+                        options: [
+                            { value: 'rare', label: 'Quasi jamais', description: 'Moins d\'une fois par semaine.', tone: 'Exemplaire', score: 95 },
+                            { value: 'sometimes', label: 'Parfois', description: '1-2 réveils/semaines.', tone: 'Surveiller', score: 70 },
+                            { value: 'often', label: 'Souvent', description: 'Plusieurs fois par semaine.', tone: 'Alerte', score: 45 },
+                            { value: 'every_night', label: 'Chaque nuit', description: 'Sommeil très fragmenté.', tone: 'Prioritaire', score: 25 }
+                        ]
+                    },
+                    stress_level: {
+                        id: 'stress_level',
+                        type: 'single',
+                        dimension: 'stress',
+                        section: 'habitudes',
+                        sectionLabel: 'Sommeil & récupération',
+                        headline: 'Comment évaluez-vous votre niveau de stress ?',
+                        description: 'Le stress chronique accélère le vieillissement cellulaire.',
+                        options: [
+                            { value: 'very_low', label: 'Très bas', description: 'Je me sens serein(e) au quotidien.', tone: 'Force', score: 95 },
+                            { value: 'balanced', label: 'Équilibré', description: 'Quelques pics mais je gère.', tone: 'Correct', score: 75 },
+                            { value: 'elevated', label: 'Elevé', description: 'Tension quasi permanente.', tone: 'A surveiller', score: 55 },
+                            { value: 'high', label: 'Très élevé', description: 'Difficulté à déconnecter.', tone: 'Alerte', score: 35 },
+                            { value: 'burnout', label: 'Saturation / burn-out', description: 'Je me sens au bord de la rupture.', tone: 'Prioritaire', score: 20 }
+                        ]
+                    },
+                    energy_dip: {
+                        id: 'energy_dip',
+                        type: 'single',
+                        dimension: 'energy',
+                        section: 'habitudes',
+                        sectionLabel: 'Sommeil & récupération',
+                        headline: 'Avez-vous un coup de mou dans la journée ?',
+                        description: 'Identifier les crashes énergétiques permet de rééquilibrer votre rythme circadien.',
+                        options: [
+                            { value: 'rarely', label: 'Quasi jamais', description: 'Énergie stable du matin au soir.', tone: 'Force', score: 95 },
+                            { value: 'light_afternoon', label: 'Fin d\'après-midi', description: 'Je gère avec une micro-pause.', tone: 'Correct', score: 75 },
+                            { value: 'daily', label: 'Tous les jours vers 15h', description: 'Besoin de café ou sucre pour tenir.', tone: 'Attention', score: 50 },
+                            { value: 'multiple', label: 'Plusieurs crashes par jour', description: 'Je lutte pour rester concentré(e).', tone: 'Prioritaire', score: 30 }
+                        ]
+                    },
+                    recovery_time: {
+                        id: 'recovery_time',
+                        type: 'single',
+                        dimension: 'energy',
+                        section: 'habitudes',
+                        sectionLabel: 'Sommeil & récupération',
+                        headline: 'Après un effort ou une grosse semaine, vous récupérez en…',
+                        description: 'La vitesse de récupération indique votre réserve adaptative.',
+                        options: [
+                            { value: 'less_24h', label: 'Moins de 24h', description: 'Je rebondis très vite.', tone: 'Force', score: 95 },
+                            { value: '48h', label: '48h', description: 'Je récupère en 1-2 nuits.', tone: 'Correct', score: 75 },
+                            { value: '72h', label: '72h', description: 'J\'ai besoin d\'un long week-end.', tone: 'A surveiller', score: 55 },
+                            { value: 'more_72h', label: 'Plus de 3 jours', description: 'Je reste vidé(e) longtemps.', tone: 'Prioritaire', score: 35 }
+                        ]
+                    },
+                    activity_level: {
+                        id: 'activity_level',
+                        type: 'single',
+                        dimension: 'activity',
+                        section: 'style',
+                        sectionLabel: 'Activité & mouvement',
+                        headline: 'Quelle est votre fréquence d\'activité physique modérée ?',
+                        description: 'Bouger stimule vos mitochondries et la longévité.',
+                        options: [
+                            { value: 'daily_move', label: 'Quotidienne (marche, sport léger)', description: 'Je bouge >30 min/jour.', tone: 'Force', score: 100 },
+                            { value: 'four_week', label: '3-4 fois/semaine', description: 'Je maintiens une routine stable.', tone: 'Solide', score: 85 },
+                            { value: 'two_week', label: '1-2 fois/semaine', description: 'Je suis régulier mais perfectible.', tone: 'À booster', score: 70 },
+                            { value: 'occasionally', label: 'Occasionnel', description: 'Je m\'y remets quand je peux.', tone: 'Alerte', score: 50 },
+                            { value: 'sedentary', label: 'Quasi jamais', description: 'Je reste surtout assis.', tone: 'Prioritaire', score: 30 }
+                        ]
+                    },
+                    sitting_hours: {
+                        id: 'sitting_hours',
+                        type: 'single',
+                        dimension: 'activity',
+                        section: 'style',
+                        sectionLabel: 'Activité & mouvement',
+                        headline: 'Combien d\'heures restez-vous assis(e) par jour ?',
+                        description: 'La sédentarité prolongée augmente le risque cardio-métabolique.',
+                        options: [
+                            { value: 'less_4', label: 'Moins de 4h', description: 'Je suis très mobile.', tone: 'Force', score: 95 },
+                            { value: '4_6', label: '4-6h', description: 'Je pense à bouger toutes les heures.', tone: 'Correct', score: 80 },
+                            { value: '6_8', label: '6-8h', description: 'Je prends quelques pauses actives.', tone: 'À surveiller', score: 60 },
+                            { value: '8_10', label: '8-10h', description: 'J\'ai un job très sédentaire.', tone: 'Alerte', score: 40 },
+                            { value: '10_plus', label: '10h et plus', description: 'Je reste assis presque toute la journée.', tone: 'Prioritaire', score: 25 }
+                        ]
+                    },
+                    nutrition_breakfast: {
+                        id: 'nutrition_breakfast',
+                        type: 'single',
+                        dimension: 'nutrition',
+                        section: 'nutrition',
+                        sectionLabel: 'Nutrition & métabolisme',
+                        headline: 'À quoi ressemble votre premier repas ?',
+                        description: 'L\'équilibre matinal conditionne votre glycémie et votre énergie.',
+                        options: [
+                            { value: 'balanced', label: 'Protéines + fibres + bons lipides', description: 'Ex : œufs, avocat, graines.', tone: 'Force', score: 95 },
+                            { value: 'light_sweet', label: 'Plutôt sucré', description: 'Tartines, jus, céréales sucrées.', tone: 'À optimiser', score: 60 },
+                            { value: 'coffee_only', label: 'Café / thé uniquement', description: 'Je repousse le premier repas.', tone: 'Attention', score: 50 },
+                            { value: 'skip', label: 'Je saute souvent', description: 'Je grignote plus tard dans la matinée.', tone: 'Prioritaire', score: 40 }
+                        ]
+                    },
+                    water_intake: {
+                        id: 'water_intake',
+                        type: 'single',
+                        dimension: 'nutrition',
+                        section: 'nutrition',
+                        sectionLabel: 'Nutrition & métabolisme',
+                        headline: 'Quelle est votre hydratation moyenne ?',
+                        description: 'Chaque cellule nécessite de l\'eau pour fonctionner.',
+                        options: [
+                            { value: 'two_liters', label: '≥ 2 litres / jour', description: 'J\'y pense toute la journée.', tone: 'Force', score: 95 },
+                            { value: 'one_five', label: '1 - 1,5 L / jour', description: 'J\'ai une gourde à portée.', tone: 'Correct', score: 80 },
+                            { value: 'one_liter', label: '~ 1 L / jour', description: 'Je pourrais boire plus.', tone: 'Alerte', score: 60 },
+                            { value: 'less_one', label: '< 1 L / jour', description: 'J\'oublie souvent de boire.', tone: 'Prioritaire', score: 40 }
+                        ]
+                    },
+                    alcohol_frequency: {
+                        id: 'alcohol_frequency',
+                        type: 'single',
+                        dimension: 'nutrition',
+                        section: 'nutrition',
+                        sectionLabel: 'Nutrition & métabolisme',
+                        headline: 'Quelle est votre fréquence de consommation d\'alcool ?',
+                        description: 'Même modérée, elle impacte le foie et la récupération.',
+                        options: [
+                            { value: 'never', label: 'Quasi jamais', description: 'Boissons festives très occasionnelles.', tone: 'Force', score: 95 },
+                            { value: 'occasion', label: '1-2 verres / semaine', description: 'Je reste à dose maîtrisée.', tone: 'Correct', score: 80 },
+                            { value: 'weekly', label: '3-6 verres / semaine', description: 'Apéros réguliers.', tone: 'Attention', score: 55 },
+                            { value: 'daily', label: 'Quotidien ou presque', description: 'Difficile de faire sans.', tone: 'Prioritaire', score: 20 }
+                        ]
+                    },
+                    social_support: {
+                        id: 'social_support',
+                        type: 'single',
+                        dimension: 'social',
+                        section: 'mental',
+                        sectionLabel: 'Mindset & entourage',
+                        headline: 'Comment décririez-vous la qualité de votre entourage ?',
+                        description: 'Un environnement soutenant est un multiplicateur de longévité.',
+                        options: [
+                            { value: 'strong', label: 'Très soutenant', description: 'Je peux compter sur plusieurs personnes.', tone: 'Force', score: 90 },
+                            { value: 'good', label: 'Solide', description: 'J\'ai un noyau dur fiable.', tone: 'Correct', score: 75 },
+                            { value: 'limited', label: 'Limité', description: 'Je me sens souvent seul(e).', tone: 'Alerte', score: 55 },
+                            { value: 'isolated', label: 'Isolé', description: 'Je manque d\'entourage de confiance.', tone: 'Prioritaire', score: 30 }
+                        ]
+                    },
+                    motivations: {
+                        id: 'motivations',
+                        type: 'multi',
+                        dimension: null,
+                        section: 'mental',
+                        sectionLabel: 'Mindset & entourage',
+                        headline: 'Quelles sont vos motivations principales ?',
+                        description: 'Choisissez jusqu\'à 3 leviers qui vous parlent le plus.',
+                        maxSelections: 3,
+                        minSelections: 1,
+                        options: [
+                            { value: 'energie', label: 'Retrouver une énergie durable', description: 'Ne plus subir les coups de mou.' },
+                            { value: 'poids', label: 'Stabiliser mon poids', description: 'Perdre la graisse tenace sans effet yo-yo.' },
+                            { value: 'stress', label: 'Calmer mon stress intérieur', description: 'Retrouver un mental clair.' },
+                            { value: 'performance', label: 'Optimiser mes performances', description: 'Être au top au travail et au sport.' },
+                            { value: 'longevite', label: 'Prévenir les risques futurs', description: 'Investir dans ma santé long terme.' },
+                            { value: 'sommeil', label: 'Dormir profondément', description: 'Arrêter de me réveiller fatigué(e).' }
+                        ]
+                    },
+                    obstacles: {
+                        id: 'obstacles',
+                        type: 'multi',
+                        dimension: null,
+                        section: 'mental',
+                        sectionLabel: 'Mindset & entourage',
+                        headline: 'Quels obstacles vous freinent le plus ?',
+                        description: 'Identifier vos obstacles nous aide à personnaliser l\'accompagnement.',
+                        maxSelections: 2,
+                        minSelections: 1,
+                        options: [
+                            { value: 'manque_temps', label: 'Manque de temps', description: 'Agenda chargé, priorités multiples.' },
+                            { value: 'surcharge_info', label: 'Trop d\'info tue l\'info', description: 'Je ne sais plus quoi suivre.' },
+                            { value: 'isolement', label: 'Manque de soutien', description: 'Je me sens seul(e) pour tenir mes objectifs.' },
+                            { value: 'fatigue', label: 'Fatigue chronique', description: 'Difficile de lancer une dynamique.' },
+                            { value: 'habitudes', label: 'Habitudes ancrées', description: 'Changer me demande beaucoup d\'énergie.' }
+                        ]
+                    }
+                },
+                engagementScreens: {
+                    epiphany: {
+                        id: 'engagement-epiphany',
+                        eyebrow: 'Insight personnalisé',
+                        ctaLabel: 'Je continue',
+                        compute: function (state) {
+                            const metrics = state.metrics || {};
+                            const answers = state.answers || {};
+                            let title = 'Votre corps vous envoie déjà des signaux';
+                            let message = 'Vos réponses montrent un potentiel de progression intéressant.';
+                            if (metrics.bmi) {
+                                if (metrics.bmi >= 30) {
+                                    title = 'Votre métabolisme tire la sonnette d\'alarme';
+                                    message = 'Votre IMC se situe en zone obésité. En rééquilibrant stress, sommeil et mouvement, vous pouvez réduire les risques cardio-métaboliques en quelques semaines.';
+                                } else if (metrics.bmi >= 25) {
+                                    title = 'Votre corps a besoin d\'un recalibrage intelligent';
+                                    message = 'En optimisant votre sommeil et votre activité, il est possible de rééquilibrer votre composition corporelle sans restrictions agressives.';
+                                } else if (metrics.bmi < 18.5) {
+                                    title = 'Votre équilibre énergétique est fragile';
+                                    message = 'Un IMC bas peut révéler un manque d\'apports ou de récupération. Stabiliser votre énergie et vos apports sera une priorité.';
+                                } else {
+                                    title = 'Vous avez une belle base de longévité';
+                                    message = 'Votre IMC est aligné avec la zone de longévité optimale. Voyons comment amplifier vos routines pour rester dans cette zone.';
+                                }
+                            }
+                            const stressAnswer = answers.stress_level;
+                            const sleepAnswer = answers.sleep_quality;
+                            const highlights = [];
+                            if (stressAnswer && ['elevated', 'high', 'burnout'].includes(stressAnswer)) {
+                                highlights.push({ icon: '🧠', text: 'Votre niveau de stress est le facteur #1 à apaiser pour relancer votre énergie et votre immunité.' });
+                            }
+                            if (sleepAnswer && ['poor', 'insomnia'].includes(sleepAnswer)) {
+                                highlights.push({ icon: '🌙', text: 'Des micro-ajustements du soir peuvent ajouter +45 minutes de sommeil profond en moyenne.' });
+                            }
+                            if (!highlights.length) {
+                                highlights.push({ icon: '✨', text: 'Vous disposez déjà d\'excellentes bases : continuons à creuser ce qui peut vous faire gagner encore en vitalité.' });
+                            }
+                            return {
+                                title,
+                                intro: 'Nous avons analysé vos premières réponses :',
+                                message,
+                                highlights
+                            };
+                        }
+                    },
+                    statShock: {
+                        id: 'engagement-stat',
+                        eyebrow: 'Le chiffre qui surprend',
+                        ctaLabel: 'Je passe à l\'action',
+                        compute: function (state, config) {
+                            const answers = state.answers || {};
+                            const stat = config.statLibrary[Math.floor(Math.random() * config.statLibrary.length)];
+                            let angle = 'Chaque ajustement quotidien est une opportunité d\'ajouter des années de vie en bonne santé.';
+                            if (answers.energy_dip === 'daily' || answers.energy_dip === 'multiple') {
+                                angle = 'Rééquilibrer vos rythmes circadiens peut faire disparaître les crashes énergétiques en 14 jours.';
+                            }
+                            if (answers.activity_level === 'sedentary') {
+                                angle = '10 minutes de marche après les repas réduisent de 30 % les pics de glycémie.';
+                            }
+                            return {
+                                title: 'Un rappel qui change la perspective',
+                                headline: stat.title,
+                                source: stat.source,
+                                takeaway: angle,
+                                highlights: [
+                                    { icon: '📈', text: '1% de progression quotidienne = 37x de mieux sur 12 mois.' },
+                                    { icon: '⏱️', text: 'Notre méthode BetterMe x OraLife se déploie en moins de 5 minutes par jour.' }
+                                ]
+                            };
+                        }
+                    },
+                    validation: {
+                        id: 'engagement-validation',
+                        eyebrow: 'Vous êtes sur la bonne voie',
+                        ctaLabel: 'Dernière étape',
+                        compute: function (state, config) {
+                            const totalSteps = state.totalInteractiveSteps || 1;
+                            const completed = state.progression?.completedCount || 0;
+                            const completion = Math.max(10, Math.round((completed / totalSteps) * 100));
+                            const motivation = state.answers?.motivations || [];
+                            let highlight = 'Nous sommes sur le point de transformer vos réponses en plan d\'action sur-mesure.';
+                            if (motivation.includes('longevite')) {
+                                highlight = 'Prévenir aujourd\'hui vous permettra de gagner en autonomie et vitalité sur les prochaines décennies.';
+                            }
+                            if (motivation.includes('energie')) {
+                                highlight = 'Imaginez vos journées sans crash énergétique : c\'est précisément ce que nous allons co-créer.';
+                            }
+                            return {
+                                title: 'Plus que quelques détails et votre feuille de route est prête',
+                                message: highlight,
+                                highlights: [
+                                    { icon: '✅', text: `${completion}% du diagnostic est déjà complété.` },
+                                    { icon: '💡', text: 'Les recommandations finales sont générées à partir de 120 scénarios éprouvés.' }
+                                ]
+                            };
+                        }
+                    }
+                },
+                screenFlow: [
+                    { id: 'landing', type: 'landing' },
+                    { id: 'gender', type: 'question' },
+                    { id: 'age_range', type: 'question' },
+                    { id: 'bmi', type: 'question' },
+                    { id: 'engagement-epiphany', type: 'engagement', key: 'epiphany' },
+                    { id: 'sleep_quality', type: 'question' },
+                    { id: 'sleep_interruptions', type: 'question' },
+                    { id: 'stress_level', type: 'question' },
+                    { id: 'energy_dip', type: 'question' },
+                    { id: 'recovery_time', type: 'question' },
+                    { id: 'activity_level', type: 'question' },
+                    { id: 'sitting_hours', type: 'question' },
+                    { id: 'engagement-stat', type: 'engagement', key: 'statShock' },
+                    { id: 'nutrition_breakfast', type: 'question' },
+                    { id: 'water_intake', type: 'question' },
+                    { id: 'alcohol_frequency', type: 'question' },
+                    { id: 'social_support', type: 'question' },
+                    { id: 'motivations', type: 'question' },
+                    { id: 'obstacles', type: 'question' },
+                    { id: 'engagement-validation', type: 'engagement', key: 'validation' },
+                    { id: 'lead', type: 'lead' },
+                    { id: 'loading', type: 'loading' },
+                    { id: 'results', type: 'results' }
+                ],
+                profiles: {
+                    body: {
+                        name: 'Protecteur métabolique',
+                        description: 'En rééquilibrant votre métabolisme et vos apports, vous pouvez relancer votre énergie profonde.'
+                    },
+                    sleep: {
+                        name: 'Gardien du sommeil',
+                        description: 'En gagnant 45 minutes de sommeil profond, votre régénération monte en flèche.'
+                    },
+                    stress: {
+                        name: 'Navigateur zen',
+                        description: 'Le stress chronique est votre prochaine mission : apaisons-le pour libérer votre potentiel.'
+                    },
+                    activity: {
+                        name: 'Moteur en réveil',
+                        description: 'Activer la masse musculaire et le mouvement sera votre accélérateur de longévité.'
+                    },
+                    nutrition: {
+                        name: 'Alchimiste métabolique',
+                        description: 'Quelques ajustements nutritionnels suffisent à stabiliser votre glycémie et votre humeur.'
+                    },
+                    energy: {
+                        name: 'Gestionnaire d\'énergie',
+                        description: 'Lissage de vos rythmes et micro-pauses ciblées vont transformer vos journées.'
+                    },
+                    social: {
+                        name: 'Connecteur à nourrir',
+                        description: 'Renforcer votre entourage de soutien multipliera vos chances de succès.'
+                    },
+                    defaultHigh: {
+                        name: 'Architecte de longévité',
+                        description: 'Vous possédez déjà des piliers solides. Continuons avec un plan anti-fragilité avancé.'
+                    },
+                    defaultMid: {
+                        name: 'Optimiseur engagé',
+                        description: 'Vous avez du momentum : quelques ajustements stratégiques vont décupler vos résultats.'
+                    },
+                    defaultLow: {
+                        name: 'Leader en renaissance',
+                        description: 'Votre corps demande un reset complet : nous allons poser des bases simples et puissantes.'
+                    }
+                },
+                recommendations: [
+                    {
+                        id: 'sleep_reset',
+                        dimension: 'sleep',
+                        threshold: 75,
+                        priority: 'high',
+                        title: 'Instaurer un rituel de sommeil profond',
+                        description: 'Optimisez votre fenêtre de sommeil avec un protocole BetterMe en 3 étapes.',
+                        actions: [
+                            'Couper les écrans lumineux 60 minutes avant le coucher et passer en lumière chaude.',
+                            'Respiration cohérente 5 minutes + gratitude écrite pour apaiser le système nerveux.',
+                            'Magnésium bisglycinate + tisane glycine : combo validé par 1500 clients OraLife.'
+                        ]
+                    },
+                    {
+                        id: 'stress_reset',
+                        dimension: 'stress',
+                        threshold: 70,
+                        priority: 'high',
+                        title: 'Installer un sas anti-stress quotidien',
+                        description: 'Le cortisol baisse de 31 % après 6 séances guidées BetterMe.',
+                        actions: [
+                            'Bloquez 2 respirations box-breathing de 4 minutes dans votre agenda (matin + fin de journée).',
+                            'Micro-rituels ancrages : ancre visuelle + phrase de puissance pour reprogrammer votre mental.',
+                            'Audit des chargeurs de stress : identifiez 3 déclencheurs et neutralisez-les.'
+                        ]
+                    },
+                    {
+                        id: 'nutrition_reboot',
+                        dimension: 'nutrition',
+                        threshold: 70,
+                        priority: 'medium',
+                        title: 'Stabiliser votre glycémie dès le matin',
+                        description: 'Un petit-déjeuner calibré = énergie stable + moins d\'inflammations.',
+                        actions: [
+                            'Ajoutez 25g de protéines et des fibres à votre premier repas.',
+                            'Hydratez-vous dès le réveil : 500 ml d\'eau + pincée de sel de mer.',
+                            'Protocol BetterMe : 3 recettes express anti-pique glycémique.'
+                        ]
+                    },
+                    {
+                        id: 'movement_snacks',
+                        dimension: 'activity',
+                        threshold: 75,
+                        priority: 'high',
+                        title: 'Multiplier les micro-mouvements intelligents',
+                        description: '10 000 pas équivalents sans rallonger vos journées.',
+                        actions: [
+                            'Intégrez 3 "movement snacks" de 5 minutes (squats, gainage, mobilité).',
+                            'Marche post-repas de 7 minutes pour réguler la glycémie.',
+                            'Activation musculaire BetterMe : routine 12 minutes / jour sans matériel.'
+                        ]
+                    },
+                    {
+                        id: 'energy_anchor',
+                        dimension: 'energy',
+                        threshold: 75,
+                        priority: 'medium',
+                        title: 'Lisser vos rythmes énergétiques',
+                        description: 'Supprimez les crashs en re-synchronisant vos ancrages circadiens.',
+                        actions: [
+                            'Exposition à la lumière naturelle dans les 30 premières minutes après réveil.',
+                            'Pause protéinée + respiration 3D avant le pic de fatigue habituel.',
+                            'Digital sunset : coupez notifications push 90 minutes avant le coucher.'
+                        ]
+                    },
+                    {
+                        id: 'social_support',
+                        dimension: 'social',
+                        threshold: 70,
+                        priority: 'medium',
+                        title: 'Activer votre cercle de soutien',
+                        description: 'Les relations de qualité augmentent la survie de +50 % (meta-analyse BYU).',
+                        actions: [
+                            'Identifiez 2 partenaires d\'engagement et planifiez un point hebdo.',
+                            'Rejoignez un cercle BetterMe (digital) pour accountability.',
+                            'Intégrez un rituel gratitude-relation 1 fois/jour.'
+                        ]
+                    }
+                ]
+            };
+
+            const screenContainer = document.getElementById('screen-container');
+            const progressBar = document.getElementById('progress-bar');
+            const progressCounter = document.getElementById('progress-counter');
+            const progressStage = document.getElementById('progress-stage');
+            const stickyCta = document.getElementById('sticky-cta');
+            const ctaButton = document.getElementById('cta-button');
+            const toastContainer = document.getElementById('toast-container');
+
+            const SCREEN_REFS = new Map();
+            const SECTION_INDEX_MAP = {};
+            const SECTION_SIZE_MAP = {};
+            const QUESTION_IDS = CONFIG.screenFlow.filter(item => item.type === 'question').map(item => item.id);
+            const TOTAL_INTERACTIVE_STEPS = CONFIG.screenFlow.filter(item => item.type === 'question' || item.type === 'lead').length;
+
+            let state = createInitialState();
+            let activeScreenRef = null;
+            let multiSelectContext = null;
+            let resultsElements = null;
+            let lastTrackedProgress = null;
+
+            initializeSectionMaps();
+            loadPersistedState();
+            buildScreens();
+            attachGlobalListeners();
+            updateProgressUI();
+            showInitialScreen();
+
+            function createInitialState() {
+                return {
+                    sessionId: generateUUID(),
+                    hasStarted: false,
+                    answers: {},
+                    metrics: {},
+                    progression: {
+                        answered: {},
+                        completedCount: 0
+                    },
+                    currentScreenIndex: 0,
+                    startedAt: null,
+                    resumed: false,
+                    lead: {},
+                    partialScores: {},
+                    finalScore: null,
+                    strengths: [],
+                    risks: [],
+                    profile: null,
+                    recommendations: [],
+                    highlightSignals: {},
+                    utm: parseUTMParams(),
+                    device: detectDeviceType(),
+                    history: [],
+                    totalInteractiveSteps: TOTAL_INTERACTIVE_STEPS
+                };
+            }
+
+            function initializeSectionMaps() {
+                const counters = {};
+                CONFIG.screenFlow.forEach(item => {
+                    if (item.type === 'question') {
+                        const question = CONFIG.questions[item.id];
+                        if (!question) return;
+                        counters[question.section] = (counters[question.section] || 0) + 1;
+                        SECTION_INDEX_MAP[item.id] = counters[question.section];
+                        SECTION_SIZE_MAP[question.section] = counters[question.section];
+                    }
+                });
+            }
+
+            function loadPersistedState() {
+                try {
+                    const raw = window.localStorage.getItem(STORAGE_KEY);
+                    if (!raw) {
+                        return;
+                    }
+                    const saved = JSON.parse(raw);
+                    if (!saved || !saved.timestamp) {
+                        window.localStorage.removeItem(STORAGE_KEY);
+                        return;
+                    }
+                    const age = Date.now() - saved.timestamp;
+                    if (age > CONFIG.meta.storageTtlHours * 60 * 60 * 1000) {
+                        window.localStorage.removeItem(STORAGE_KEY);
+                        return;
+                    }
+                    state.sessionId = saved.sessionId || state.sessionId;
+                    state.hasStarted = saved.hasStarted || false;
+                    state.answers = saved.answers || {};
+                    state.metrics = saved.metrics || {};
+                    state.progression = saved.progression || { answered: {}, completedCount: 0 };
+                    state.currentScreenIndex = saved.currentScreenIndex || 0;
+                    state.startedAt = saved.startedAt || (saved.hasStarted ? saved.timestamp : null);
+                    state.lead = saved.lead || {};
+                    state.partialScores = saved.partialScores || {};
+                    state.finalScore = typeof saved.finalScore === 'number' ? saved.finalScore : null;
+                    state.strengths = saved.strengths || [];
+                    state.risks = saved.risks || [];
+                    state.profile = saved.profile || null;
+                    state.recommendations = saved.recommendations || [];
+                    state.highlightSignals = saved.highlightSignals || {};
+                    state.utm = Object.assign({}, state.utm, saved.utm || {});
+                    state.resumed = !!saved.hasStarted;
+                    lastTrackedProgress = Math.round((state.progression.completedCount / state.totalInteractiveSteps) * 100);
+                } catch (error) {
+                    console.warn('Impossible de charger la session précédente', error);
+                }
+            }
+
+            function persistState() {
+                try {
+                    const payload = {
+                        sessionId: state.sessionId,
+                        hasStarted: state.hasStarted,
+                        answers: state.answers,
+                        metrics: state.metrics,
+                        progression: state.progression,
+                        currentScreenIndex: state.currentScreenIndex,
+                        startedAt: state.startedAt,
+                        lead: state.lead,
+                        partialScores: state.partialScores,
+                        finalScore: state.finalScore,
+                        strengths: state.strengths,
+                        risks: state.risks,
+                        profile: state.profile,
+                        recommendations: state.recommendations,
+                        highlightSignals: state.highlightSignals,
+                        utm: state.utm,
+                        timestamp: Date.now()
+                    };
+                    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+                } catch (error) {
+                    console.warn('Stockage local indisponible', error);
+                }
+            }
+
+            function clearPersistedState() {
+                try {
+                    window.localStorage.removeItem(STORAGE_KEY);
+                } catch (error) {
+                    console.warn('Impossible de nettoyer le stockage', error);
+                }
+            }
+
+            function buildScreens() {
+                CONFIG.screenFlow.forEach((item, index) => {
+                    const screenElement = createScreenElement(item, index);
+                    screenContainer.appendChild(screenElement);
+                    SCREEN_REFS.set(item.id, {
+                        element: screenElement,
+                        config: item
+                    });
+                    SCREEN_IDS.push(item.id);
+                });
+            }
+
+            function attachGlobalListeners() {
+                ctaButton.addEventListener('click', () => {
+                    if (!multiSelectContext) {
+                        return;
+                    }
+                    confirmMultiSelection();
+                });
+
+                window.addEventListener('beforeunload', () => {
+                    if (!state.finalScore) {
+                        trackEvent('quiz_abandon', {
+                            progressPercent: getProgressPercent(),
+                            screenId: state.currentScreenId
+                        });
+                    }
+                });
+            }
+
+            function showInitialScreen() {
+                showScreenById('landing');
+            }
+
+            function createScreenElement(item, index) {
+                const section = document.createElement('section');
+                section.className = 'screen';
+                section.id = `screen-${item.id}`;
+                section.setAttribute('data-screen-id', item.id);
+                section.setAttribute('data-screen-type', item.type);
+                section.setAttribute('tabindex', '-1');
+
+                if (item.type === 'landing') {
+                    renderLandingScreen(section);
+                } else if (item.type === 'question') {
+                    renderQuestionScreen(section, CONFIG.questions[item.id]);
+                } else if (item.type === 'engagement') {
+                    renderEngagementScreen(section, item);
+                } else if (item.type === 'lead') {
+                    renderLeadScreen(section);
+                } else if (item.type === 'loading') {
+                    renderLoadingScreen(section);
+                } else if (item.type === 'results') {
+                    renderResultsScreen(section);
+                }
+
+                return section;
+            }
+
+            function renderLandingScreen(section) {
+                section.classList.add('landing');
+                section.innerHTML = `
+                    <div class="eyebrow">Diagnostic BetterMe x OraLife</div>
+                    <h1>Décuplez votre vitalité &amp; votre longévité en moins de 6 minutes</h1>
+                    <p>Répondez à quelques questions ciblées et recevez un plan d\'action instantané basé sur les meilleures pratiques BetterMe et l\'expertise OraLife.</p>
+                    <div class="benefits">
+                        <div class="benefit-chip"><span>01</span><div>Score de vitalité personnalisé et interprétation scientifique</div></div>
+                        <div class="benefit-chip"><span>02</span><div>Recommandations priorisées pour votre sommeil, stress, nutrition</div></div>
+                        <div class="benefit-chip"><span>03</span><div>Accès à un diagnostic offert de 20 min avec un expert OraLife</div></div>
+                        <div class="benefit-chip"><span>04</span><div>Option de reprise : continuez où vous vous êtes arrêté(e)</div></div>
+                    </div>
+                    <div class="start-actions">
+                        <button type="button" class="btn btn-primary" id="btn-start-quiz">Commencer maintenant</button>
+                        <button type="button" class="btn btn-secondary" id="btn-more-info">Voir comment ça fonctionne</button>
+                    </div>
+                    <div class="immediate-feedback" aria-live="polite">Temps estimé : 5 min · Aucun paiement requis</div>
+                    <div class="disclaimer">Vos réponses restent confidentielles. Nous ne partageons jamais vos données.</div>
+                `;
+
+                const startButton = section.querySelector('#btn-start-quiz');
+                const infoButton = section.querySelector('#btn-more-info');
+
+                startButton.addEventListener('click', () => {
+                    startQuiz();
+                });
+
+                infoButton.addEventListener('click', () => {
+                    showToast('Nous allons vous guider étape par étape ✨');
+                });
+
+                if (state.resumed && state.currentScreenIndex > 0) {
+                    const resumeBanner = document.createElement('div');
+                    resumeBanner.className = 'resume-banner';
+                    resumeBanner.innerHTML = `
+                        <div>
+                            <strong>Reprise détectée</strong><br>
+                            Vous aviez complété ${Math.round(getProgressPercent())}% du diagnostic. Souhaitez-vous reprendre là où vous étiez ?
+                        </div>
+                        <button type="button" id="btn-resume-session">Reprendre</button>
+                    `;
+                    section.appendChild(resumeBanner);
+                    resumeBanner.querySelector('#btn-resume-session').addEventListener('click', resumeQuiz);
+                }
+            }
+
+            function renderQuestionScreen(section, question) {
+                if (!question) {
+                    section.innerHTML = '<p>Question introuvable.</p>';
+                    return;
+                }
+                const eyebrow = document.createElement('div');
+                eyebrow.className = 'eyebrow';
+                eyebrow.textContent = question.sectionLabel || 'Étape';
+
+                const title = document.createElement('h2');
+                title.textContent = question.headline;
+
+                const description = document.createElement('p');
+                description.textContent = question.description || '';
+
+                section.append(eyebrow, title, description);
+
+                if (question.type === 'bmi') {
+                    renderBmiQuestion(section, question);
+                    return;
+                }
+
+                const optionGrid = document.createElement('div');
+                optionGrid.className = 'option-grid';
+                if (question.options.length >= 4) {
+                    optionGrid.classList.add('two-cols');
+                }
+
+                const selectedValues = getStoredAnswer(question.id);
+                question.options.forEach(option => {
+                    const optionButton = document.createElement('button');
+                    optionButton.type = 'button';
+                    optionButton.className = 'option-card';
+                    optionButton.setAttribute('data-value', option.value);
+                    optionButton.setAttribute('aria-pressed', 'false');
+                    optionButton.innerHTML = `
+                        <span class="badge-tonality">${option.tone || 'Choix'}</span>
+                        <span class="option-title">${option.label}</span>
+                        ${option.description ? `<span class="option-description">${option.description}</span>` : ''}
+                    `;
+
+                    if (question.type === 'multi' && Array.isArray(selectedValues) && selectedValues.includes(option.value)) {
+                        optionButton.dataset.selected = 'true';
+                        optionButton.setAttribute('aria-pressed', 'true');
+                    }
+
+                    if (question.type === 'single' && selectedValues === option.value) {
+                        optionButton.dataset.selected = 'true';
+                        optionButton.setAttribute('aria-pressed', 'true');
+                    }
+
+                    optionButton.addEventListener('click', () => {
+                        if (question.type === 'single') {
+                            handleSingleSelection(question, option, optionButton);
+                        } else if (question.type === 'multi') {
+                            handleMultiSelection(question, option, optionButton);
+                        }
+                    });
+
+                    optionGrid.appendChild(optionButton);
+                });
+
+                section.appendChild(optionGrid);
+            }
+
+            function renderBmiQuestion(section, question) {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'bmi-wrapper';
+
+                const defaults = {
+                    height: state.metrics.height || question.defaultHeight || 170,
+                    weight: state.metrics.weight || question.defaultWeight || 68
+                };
+
+                wrapper.innerHTML = `
+                    <div class="bmi-inputs">
+                        <div class="input-group">
+                            <label for="height-range">Taille (cm)
+                                <span id="height-value" class="microcopy">${defaults.height} cm</span>
+                            </label>
+                            <div class="range-row">
+                                <input type="range" id="height-range" min="${question.minHeight}" max="${question.maxHeight}" value="${defaults.height}" step="1" aria-valuemin="${question.minHeight}" aria-valuemax="${question.maxHeight}" aria-valuenow="${defaults.height}">
+                                <input type="number" id="height-input" min="${question.minHeight}" max="${question.maxHeight}" value="${defaults.height}" aria-label="Taille en centimètres">
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label for="weight-range">Poids (kg)
+                                <span id="weight-value" class="microcopy">${defaults.weight} kg</span>
+                            </label>
+                            <div class="range-row">
+                                <input type="range" id="weight-range" min="${question.minWeight}" max="${question.maxWeight}" value="${defaults.weight}" step="0.5" aria-valuemin="${question.minWeight}" aria-valuemax="${question.maxWeight}" aria-valuenow="${defaults.weight}">
+                                <input type="number" id="weight-input" min="${question.minWeight}" max="${question.maxWeight}" step="0.1" value="${defaults.weight}" aria-label="Poids en kilogrammes">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bmi-visual" aria-live="polite">
+                        <div class="bmi-scale">
+                            <div class="bmi-pointer" id="bmi-pointer" style="left: 50%"></div>
+                        </div>
+                        <div class="bmi-labels">
+                            <span>&lt; 18.5</span>
+                            <span>21</span>
+                            <span>25</span>
+                            <span>30</span>
+                            <span>&gt; 35</span>
+                        </div>
+                        <div class="bmi-legend">
+                            <div class="legend-item"><span class="legend-color" style="background:#88C7FF"></span> Maigreur</div>
+                            <div class="legend-item"><span class="legend-color" style="background:#6CE490"></span> Zone optimale</div>
+                            <div class="legend-item"><span class="legend-color" style="background:#F5C04D"></span> Surpoids</div>
+                            <div class="legend-item"><span class="legend-color" style="background:#F5806B"></span> Obésité</div>
+                        </div>
+                        <div class="microcopy" id="bmi-insight">Renseignez vos données pour voir votre zone.</div>
+                    </div>
+                    <button type="button" class="btn btn-primary" id="btn-validate-bmi">Continuer</button>
+                `;
+
+                section.appendChild(wrapper);
+
+                const heightRange = wrapper.querySelector('#height-range');
+                const heightInput = wrapper.querySelector('#height-input');
+                const weightRange = wrapper.querySelector('#weight-range');
+                const weightInput = wrapper.querySelector('#weight-input');
+                const heightValue = wrapper.querySelector('#height-value');
+                const weightValue = wrapper.querySelector('#weight-value');
+                const pointer = wrapper.querySelector('#bmi-pointer');
+                const insight = wrapper.querySelector('#bmi-insight');
+                const validateButton = wrapper.querySelector('#btn-validate-bmi');
+
+                const updateValues = () => {
+                    const height = clamp(parseFloat(heightInput.value), question.minHeight, question.maxHeight);
+                    const weight = clamp(parseFloat(weightInput.value), question.minWeight, question.maxWeight);
+                    heightRange.value = height;
+                    weightRange.value = weight;
+                    heightValue.textContent = `${height} cm`;
+                    weightValue.textContent = `${weight} kg`;
+                    const bmi = computeBmi(height, weight);
+                    updateBmiPointer(pointer, bmi);
+                    const interpretation = interpretBmi(bmi);
+                    insight.textContent = interpretation.text;
+                    insight.dataset.tone = interpretation.tone;
+                    state.metrics = {
+                        height,
+                        weight,
+                        bmi,
+                        category: interpretation.category
+                    };
+                    state.answers[question.id] = {
+                        height,
+                        weight,
+                        bmi: bmi,
+                        category: interpretation.category
+                    };
+                    persistState();
+                };
+
+                ['input', 'change'].forEach(evt => {
+                    heightRange.addEventListener(evt, () => {
+                        heightInput.value = heightRange.value;
+                        updateValues();
+                    });
+                    weightRange.addEventListener(evt, () => {
+                        weightInput.value = weightRange.value;
+                        updateValues();
+                    });
+                });
+
+                heightInput.addEventListener('blur', updateValues);
+                weightInput.addEventListener('blur', updateValues);
+                heightInput.addEventListener('change', updateValues);
+                weightInput.addEventListener('change', updateValues);
+
+                updateValues();
+
+                validateButton.addEventListener('click', () => {
+                    markStepCompleted(question.id);
+                    recomputeScores();
+                    trackEvent('answer_select', {
+                        questionId: question.id,
+                        value: state.metrics.bmi,
+                        category: state.metrics.category
+                    });
+                    goToNextScreen();
+                });
+            }
+
+            function renderEngagementScreen(section, item) {
+                section.classList.add('engagement');
+                section.innerHTML = `
+                    <div class="engagement-card">
+                        <div class="eyebrow" data-ref="eyebrow">Moment inspiration</div>
+                        <h2 data-ref="title">Pause d\'inspiration</h2>
+                        <p data-ref="message">Nous personnalisons votre expérience.</p>
+                        <div class="engagement-highlights" data-ref="highlights"></div>
+                        <div class="immediate-feedback" data-ref="extra"></div>
+                        <button type="button" class="btn btn-primary" data-ref="cta">Continuer</button>
+                    </div>
+                `;
+
+                const eyebrow = section.querySelector('[data-ref="eyebrow"]');
+                const title = section.querySelector('[data-ref="title"]');
+                const message = section.querySelector('[data-ref="message"]');
+                const highlights = section.querySelector('[data-ref="highlights"]');
+                const extra = section.querySelector('[data-ref="extra"]');
+                const cta = section.querySelector('[data-ref="cta"]');
+
+                SCREEN_REFS.get(item.id).nodes = { eyebrow, title, message, highlights, extra, cta };
+
+                cta.addEventListener('click', () => {
+                    trackEvent('engagement_continue', {
+                        screenId: item.id
+                    });
+                    goToNextScreen();
+                });
+            }
+
+            function renderLeadScreen(section) {
+                section.classList.add('lead-capture');
+                section.innerHTML = `
+                    <div class="eyebrow">Votre plan personnalisé est presque prêt</div>
+                    <h2>Où pouvons-nous vous envoyer vos recommandations ?</h2>
+                    <p>Renseignez vos coordonnées pour recevoir votre feuille de route détaillée + l\'invitation à un diagnostic avec un expert.</p>
+                    <form class="lead-form" id="lead-form">
+                        <div class="form-row two-cols">
+                            <div>
+                                <label for="lead-firstname">Prénom*</label>
+                                <input type="text" id="lead-firstname" name="firstname" autocomplete="given-name" required>
+                            </div>
+                            <div>
+                                <label for="lead-lastname">Nom</label>
+                                <input type="text" id="lead-lastname" name="lastname" autocomplete="family-name">
+                            </div>
+                        </div>
+                        <div class="form-row two-cols">
+                            <div>
+                                <label for="lead-email">Email*</label>
+                                <input type="email" id="lead-email" name="email" autocomplete="email" required>
+                            </div>
+                            <div>
+                                <label for="lead-phone">Téléphone</label>
+                                <input type="tel" id="lead-phone" name="phone" autocomplete="tel">
+                            </div>
+                        </div>
+                        <div class="form-row two-cols">
+                            <div>
+                                <label for="lead-birthdate">Date de naissance*</label>
+                                <input type="date" id="lead-birthdate" name="birthdate" required>
+                            </div>
+                            <div>
+                                <label for="lead-language">Langue de contact</label>
+                                <select id="lead-language" name="language">
+                                    <option value="fr" selected>Français</option>
+                                    <option value="en">Anglais</option>
+                                </select>
+                            </div>
+                        </div>
+                        <label class="consent-field">
+                            <input type="checkbox" id="lead-consent" required>
+                            <span>J\'accepte de recevoir mes recommandations personnalisées par email et, le cas échéant, d\'être recontacté(e) par un expert OraLife. Désinscription en 1 clic.</span>
+                        </label>
+                        <button type="submit" class="btn btn-primary" id="lead-submit">Recevoir mon plan</button>
+                        <div class="status-message" id="lead-status" aria-live="polite"></div>
+                    </form>
+                `;
+
+                const form = section.querySelector('#lead-form');
+                const status = section.querySelector('#lead-status');
+
+                if (state.lead) {
+                    if (state.lead.firstname) form.firstname.value = state.lead.firstname;
+                    if (state.lead.lastname) form.lastname.value = state.lead.lastname;
+                    if (state.lead.email) form.email.value = state.lead.email;
+                    if (state.lead.phone) form.phone.value = state.lead.phone;
+                    if (state.lead.birthdate) form.birthdate.value = state.lead.birthdate;
+                    if (state.lead.language) form.language.value = state.lead.language;
+                    if (state.lead.consent) form.querySelector('#lead-consent').checked = true;
+                }
+
+                form.addEventListener('submit', async (event) => {
+                    event.preventDefault();
+                    if (state.isSubmitting) {
+                        return;
+                    }
+
+                    const formData = new FormData(form);
+                    const leadData = {
+                        firstname: formData.get('firstname')?.trim(),
+                        lastname: formData.get('lastname')?.trim(),
+                        email: formData.get('email')?.trim(),
+                        phone: formData.get('phone')?.trim(),
+                        birthdate: formData.get('birthdate'),
+                        language: formData.get('language') || CONFIG.meta.language,
+                        consent: form.querySelector('#lead-consent').checked
+                    };
+
+                    const errors = validateLead(leadData);
+                    if (errors.length) {
+                        status.textContent = errors.join(' · ');
+                        status.style.color = '#E94B3C';
+                        return;
+                    }
+
+                    state.isSubmitting = true;
+                    status.textContent = 'Analyse des données en cours…';
+                    status.style.color = 'var(--text-muted)';
+
+                    state.lead = leadData;
+                    markStepCompleted('lead');
+                    recomputeScores();
+                    persistState();
+
+                    trackEvent('lead_submit', {
+                        email: leadData.email,
+                        phone: leadData.phone,
+                        completionTimeMs: state.startedAt ? Date.now() - state.startedAt : null
+                    });
+
+                    goToScreenById('loading');
+
+                    const payload = buildPayload();
+                    const submission = await submitWithRetry(payload);
+
+                    await wait(1400);
+
+                    if (!submission.success) {
+                        state.isSubmitting = false;
+                        showToast('Oups, une erreur est survenue. Réessayez dans un instant.', 'error');
+                        trackEvent('lead_submit_error', {
+                            message: submission.error?.message || 'unknown_error'
+                        });
+                        showScreenById('lead');
+                        status.textContent = 'Impossible d\'envoyer vos réponses. Merci d\'essayer à nouveau.';
+                        status.style.color = '#E94B3C';
+                        return;
+                    }
+
+                    state.isSubmitting = false;
+                    clearPersistedState();
+                    populateResultsScreen();
+                    goToScreenById('results');
+                    trackEvent('result_view', {
+                        finalScore: state.finalScore,
+                        profile: state.profile?.name,
+                        completionTimeMs: state.startedAt ? Date.now() - state.startedAt : null
+                    });
+                });
+            }
+
+            function renderLoadingScreen(section) {
+                section.innerHTML = `
+                    <div class="loading-visual">
+                        <div class="spinner" role="status" aria-label="Calcul en cours"></div>
+                        <h2>Nous générons votre plan sur mesure…</h2>
+                        <p>Analyse de vos habitudes, pondération scientifique et création de recommandations prioritaires.</p>
+                    </div>
+                `;
+            }
+
+            function renderResultsScreen(section) {
+                section.classList.add('results');
+                section.innerHTML = `
+                    <div class="results-header">
+                        <div class="eyebrow">Votre score BetterMe x OraLife</div>
+                        <div class="score-circle" id="results-score-circle" aria-live="polite">
+                            <div id="results-score-value">--</div>
+                            <span>sur 100</span>
+                        </div>
+                        <div>
+                            <h2 id="results-profile-name">Profil personnalisé</h2>
+                            <p id="results-profile-description">Répondez au quiz pour découvrir votre profil.</p>
+                        </div>
+                    </div>
+                    <div class="badges-grid" id="results-metrics"></div>
+                    <div class="card list-card">
+                        <h3>Vos forces actuelles</h3>
+                        <ul id="results-strengths"></ul>
+                    </div>
+                    <div class="card list-card">
+                        <h3>Vos zones à prioriser</h3>
+                        <ul id="results-risks"></ul>
+                    </div>
+                    <div class="card" id="results-recos">
+                        <h3>Plan d\'action personnalisé (3 priorités)</h3>
+                        <div id="results-recommendations"></div>
+                        <a href="${CONFIG.cta.url}" target="_blank" rel="noopener" class="cta-result" id="results-cta">${CONFIG.cta.label}</a>
+                    </div>
+                    <div class="microcopy" id="results-bmi-reminder"></div>
+                `;
+
+                resultsElements = {
+                    scoreCircle: section.querySelector('#results-score-circle'),
+                    scoreValue: section.querySelector('#results-score-value'),
+                    profileName: section.querySelector('#results-profile-name'),
+                    profileDescription: section.querySelector('#results-profile-description'),
+                    metrics: section.querySelector('#results-metrics'),
+                    strengths: section.querySelector('#results-strengths'),
+                    risks: section.querySelector('#results-risks'),
+                    recommendations: section.querySelector('#results-recommendations'),
+                    cta: section.querySelector('#results-cta'),
+                    bmiReminder: section.querySelector('#results-bmi-reminder')
+                };
+
+                resultsElements.cta.addEventListener('click', () => {
+                    trackEvent('cta_click', {
+                        url: CONFIG.cta.url,
+                        finalScore: state.finalScore
+                    });
+                });
+            }
+
+            function startQuiz() {
+                state.hasStarted = true;
+                state.startedAt = Date.now();
+                state.currentScreenIndex = Math.max(1, getScreenIndexById('gender'));
+                state.currentScreenId = CONFIG.screenFlow[state.currentScreenIndex].id;
+                persistState();
+                trackEvent('quiz_start', {
+                    utm_source: state.utm.utm_source,
+                    device: state.device
+                });
+                showScreenByIndex(state.currentScreenIndex);
+            }
+
+            function resumeQuiz() {
+                if (!state.currentScreenIndex || state.currentScreenIndex === 0) {
+                    state.currentScreenIndex = Math.max(1, getScreenIndexById('gender'));
+                }
+                showScreenByIndex(state.currentScreenIndex);
+                trackEvent('quiz_resume', {
+                    resumedAtStep: state.currentScreenId
+                });
+            }
+
+            function handleSingleSelection(question, option, button) {
+                const currentValue = state.answers[question.id];
+                if (currentValue === option.value) {
+                    return;
+                }
+                const screenElement = SCREEN_REFS.get(question.id).element;
+                const buttons = screenElement.querySelectorAll('.option-card');
+                buttons.forEach(btn => {
+                    btn.dataset.selected = 'false';
+                    btn.setAttribute('aria-pressed', 'false');
+                });
+                button.dataset.selected = 'true';
+                button.setAttribute('aria-pressed', 'true');
+
+                state.answers[question.id] = option.value;
+                markStepCompleted(question.id);
+                recomputeScores();
+                persistState();
+
+                trackEvent('answer_select', {
+                    questionId: question.id,
+                    value: option.value,
+                    label: option.label
+                });
+
+                setTimeout(() => {
+                    goToNextScreen();
+                }, 380);
+            }
+
+            function handleMultiSelection(question, option, button) {
+                if (!multiSelectContext || multiSelectContext.questionId !== question.id) {
+                    multiSelectContext = {
+                        questionId: question.id,
+                        selected: new Set(Array.isArray(state.answers[question.id]) ? state.answers[question.id] : []),
+                        maxSelections: question.maxSelections || 3,
+                        minSelections: question.minSelections || 1
+                    };
+                }
+
+                const isSelected = multiSelectContext.selected.has(option.value);
+                if (isSelected) {
+                    multiSelectContext.selected.delete(option.value);
+                    button.dataset.selected = 'false';
+                    button.setAttribute('aria-pressed', 'false');
+                } else {
+                    if (multiSelectContext.selected.size >= multiSelectContext.maxSelections) {
+                        showToast(`Maximum ${multiSelectContext.maxSelections} sélection(s).`, 'neutral');
+                        return;
+                    }
+                    multiSelectContext.selected.add(option.value);
+                    button.dataset.selected = 'true';
+                    button.setAttribute('aria-pressed', 'true');
+                }
+
+                updateStickyCta(question);
+            }
+
+            function updateStickyCta(question) {
+                if (!multiSelectContext || multiSelectContext.questionId !== question.id) {
+                    stickyCta.classList.add('hidden');
+                    return;
+                }
+                const selectedCount = multiSelectContext.selected.size;
+                stickyCta.classList.remove('hidden');
+                ctaButton.textContent = selectedCount > 0
+                    ? `Valider (${selectedCount}/${multiSelectContext.maxSelections})`
+                    : 'Sélectionnez au moins une option';
+                ctaButton.disabled = selectedCount < multiSelectContext.minSelections;
+            }
+
+            function confirmMultiSelection() {
+                if (!multiSelectContext) return;
+                if (multiSelectContext.selected.size < multiSelectContext.minSelections) {
+                    showToast(`Sélectionnez au moins ${multiSelectContext.minSelections} option(s).`, 'error');
+                    return;
+                }
+                state.answers[multiSelectContext.questionId] = Array.from(multiSelectContext.selected);
+                markStepCompleted(multiSelectContext.questionId);
+                recomputeScores();
+                persistState();
+
+                trackEvent('answer_select', {
+                    questionId: multiSelectContext.questionId,
+                    value: Array.from(multiSelectContext.selected)
+                });
+
+                stickyCta.classList.add('hidden');
+                multiSelectContext = null;
+                goToNextScreen();
+            }
+
+            function markStepCompleted(stepId) {
+                if (!state.progression.answered[stepId]) {
+                    state.progression.answered[stepId] = true;
+                    state.progression.completedCount += 1;
+                }
+                updateProgressUI();
+                persistState();
+            }
+
+            function goToNextScreen() {
+                const nextIndex = state.currentScreenIndex + 1;
+                if (nextIndex >= CONFIG.screenFlow.length) {
+                    return;
+                }
+                showScreenByIndex(nextIndex);
+            }
+
+            function getScreenIndexById(id) {
+                return CONFIG.screenFlow.findIndex(item => item.id === id);
+            }
+
+            function showScreenById(id) {
+                const index = getScreenIndexById(id);
+                if (index >= 0) {
+                    showScreenByIndex(index);
+                }
+            }
+
+            function showScreenByIndex(index) {
+                const item = CONFIG.screenFlow[index];
+                if (!item) return;
+
+                const nextRef = SCREEN_REFS.get(item.id);
+                if (!nextRef) return;
+
+                if (activeScreenRef) {
+                    activeScreenRef.element.classList.remove('active');
+                }
+
+                nextRef.element.classList.add('active');
+                nextRef.element.focus({ preventScroll: false });
+                activeScreenRef = nextRef;
+
+                state.currentScreenIndex = index;
+                state.currentScreenId = item.id;
+
+                updateProgressStage(item);
+                persistState();
+
+                handleScreenSpecificLogic(item, nextRef);
+
+                trackEvent('step_view', {
+                    screenId: item.id,
+                    screenType: item.type,
+                    progressPercent: getProgressPercent()
+                });
+            }
+
+            function handleScreenSpecificLogic(item, ref) {
+                if (item.type === 'question') {
+                    if (multiSelectContext && multiSelectContext.questionId !== item.id) {
+                        multiSelectContext = null;
+                        stickyCta.classList.add('hidden');
+                    }
+
+                    if (CONFIG.questions[item.id]?.type === 'multi') {
+                        const stored = state.answers[item.id] || [];
+                        multiSelectContext = {
+                            questionId: item.id,
+                            selected: new Set(Array.isArray(stored) ? stored : []),
+                            maxSelections: CONFIG.questions[item.id].maxSelections || 3,
+                            minSelections: CONFIG.questions[item.id].minSelections || 1
+                        };
+                        const buttons = ref.element.querySelectorAll('.option-card');
+                        buttons.forEach(btn => {
+                            const value = btn.dataset.value;
+                            const isSelected = multiSelectContext.selected.has(value);
+                            btn.dataset.selected = isSelected ? 'true' : 'false';
+                            btn.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+                        });
+                        updateStickyCta(CONFIG.questions[item.id]);
+                    } else {
+                        stickyCta.classList.add('hidden');
+                    }
+                } else if (item.type === 'engagement') {
+                    populateEngagementScreen(item, ref);
+                } else {
+                    stickyCta.classList.add('hidden');
+                }
+
+                if (item.type === 'lead') {
+                    const leadForm = ref.element.querySelector('#lead-form');
+                    if (leadForm) {
+                        const firstInput = leadForm.querySelector('input, select');
+                        if (firstInput) firstInput.focus({ preventScroll: true });
+                    }
+                }
+
+                if (item.type === 'results') {
+                    if (!state.finalScore) {
+                        populateResultsScreen();
+                    }
+                }
+            }
+
+            function populateEngagementScreen(item, ref) {
+                const engagementConfig = CONFIG.engagementScreens[item.key];
+                if (!engagementConfig) return;
+                const data = engagementConfig.compute(state, CONFIG) || {};
+                const nodes = ref.nodes;
+                if (!nodes) return;
+
+                nodes.eyebrow.textContent = engagementConfig.eyebrow || 'Insight';
+                nodes.title.textContent = data.title || 'Inspiration';
+                nodes.message.textContent = data.message || data.intro || '';
+                nodes.extra.textContent = data.takeaway || '';
+
+                nodes.highlights.innerHTML = '';
+                if (Array.isArray(data.highlights)) {
+                    data.highlights.forEach(item => {
+                        const line = document.createElement('div');
+                        line.className = 'engagement-highlight';
+                        line.innerHTML = `<span>${item.icon || '•'}</span><div>${item.text}</div>`;
+                        nodes.highlights.appendChild(line);
+                    });
+                }
+
+                nodes.cta.textContent = engagementConfig.ctaLabel || 'Continuer';
+
+                trackEvent('engagement_view', {
+                    screenId: engagementConfig.id,
+                    title: data.title
+                });
+            }
+
+            function updateProgressStage(item) {
+                const percent = getProgressPercent();
+                progressBar.style.width = `${percent}%`;
+                progressBar.parentElement.setAttribute('aria-valuenow', String(Math.round(percent)));
+                progressCounter.textContent = `${Math.round(percent)}%`;
+
+                let stageLabel = 'Progression';
+                if (item.type === 'question') {
+                    const question = CONFIG.questions[item.id];
+                    if (question) {
+                        const index = SECTION_INDEX_MAP[item.id] || 1;
+                        const total = SECTION_SIZE_MAP[question.section] || 1;
+                        stageLabel = `${question.sectionLabel || 'Étape'} · ${index}/${total}`;
+                    }
+                } else if (item.type === 'engagement') {
+                    stageLabel = 'Pause inspiration';
+                } else if (item.type === 'lead') {
+                    stageLabel = 'Dernière étape';
+                } else if (item.type === 'results') {
+                    stageLabel = 'Votre plan personnalisé';
+                } else if (item.type === 'landing') {
+                    stageLabel = 'Prêt à commencer';
+                }
+                progressStage.textContent = stageLabel;
+
+                if (lastTrackedProgress === null || Math.abs(percent - lastTrackedProgress) >= 5) {
+                    lastTrackedProgress = percent;
+                    trackEvent('progress', {
+                        progressPercent: percent,
+                        completedSteps: state.progression.completedCount,
+                        totalSteps: state.totalInteractiveSteps
+                    });
+                }
+            }
+
+            function getProgressPercent() {
+                if (!state.totalInteractiveSteps) return 0;
+                return Math.max(0, Math.min(100, (state.progression.completedCount / state.totalInteractiveSteps) * 100));
+            }
+
+            function updateProgressUI() {
+                const percent = getProgressPercent();
+                progressBar.style.width = `${percent}%`;
+                progressCounter.textContent = `${Math.round(percent)}%`;
+                progressBar.parentElement.setAttribute('aria-valuenow', String(Math.round(percent)));
+            }
+
+            function recomputeScores() {
+                const dimensionTotals = {};
+                const dimensionWeights = {};
+
+                QUESTION_IDS.forEach(questionId => {
+                    const question = CONFIG.questions[questionId];
+                    if (!question || !question.dimension) {
+                        return;
+                    }
+                    const answer = state.answers[questionId];
+                    if (answer === undefined || answer === null) {
+                        return;
+                    }
+                    const dimension = question.dimension;
+                    const weight = question.weight || 1;
+                    let score = null;
+
+                    if (question.type === 'single') {
+                        const option = question.options.find(opt => opt.value === answer);
+                        score = option ? option.score : null;
+                    } else if (question.type === 'multi') {
+                        const selected = Array.isArray(answer) ? answer : [];
+                        if (selected.length) {
+                            const scores = selected
+                                .map(value => question.options.find(opt => opt.value === value))
+                                .filter(Boolean)
+                                .map(opt => typeof opt.score === 'number' ? opt.score : 70);
+                            score = scores.length ? scores.reduce((acc, val) => acc + val, 0) / scores.length : null;
+                        }
+                    } else if (question.type === 'bmi') {
+                        const bmiValue = typeof answer.bmi === 'number' ? answer.bmi : state.metrics.bmi;
+                        if (bmiValue) {
+                            score = scoreFromBmi(bmiValue);
+                        }
+                    }
+
+                    if (typeof score === 'number') {
+                        dimensionTotals[dimension] = (dimensionTotals[dimension] || 0) + score * weight;
+                        dimensionWeights[dimension] = (dimensionWeights[dimension] || 0) + weight;
+                    }
+                });
+
+                const partialScores = {};
+                Object.keys(CONFIG.dimensions).forEach(dimension => {
+                    const total = dimensionTotals[dimension] || 0;
+                    const weight = dimensionWeights[dimension] || 0;
+                    partialScores[dimension] = weight ? Math.round(total / weight) : null;
+                });
+
+                let weightedSum = 0;
+                let weightTotal = 0;
+                Object.entries(partialScores).forEach(([dimension, value]) => {
+                    if (typeof value === 'number') {
+                        const dimensionWeight = CONFIG.weights[dimension] || 1;
+                        weightedSum += value * dimensionWeight;
+                        weightTotal += dimensionWeight;
+                    }
+                });
+                const finalScore = weightTotal ? Math.round(weightedSum / weightTotal) : null;
+
+                const sortedDimensions = Object.entries(partialScores)
+                    .filter(([, value]) => typeof value === 'number')
+                    .sort((a, b) => b[1] - a[1]);
+
+                const strengths = sortedDimensions.filter(([, value]) => value >= 75).slice(0, 3);
+                const risks = sortedDimensions.filter(([, value]) => value < 70).slice(0, 3);
+
+                const profile = determineProfile(finalScore, risks);
+                const recommendations = generateRecommendations(partialScores);
+
+                state.partialScores = partialScores;
+                state.finalScore = finalScore;
+                state.strengths = strengths;
+                state.risks = risks;
+                state.profile = profile;
+                state.recommendations = recommendations;
+
+                persistState();
+            }
+
+            function generateRecommendations(partialScores) {
+                const recos = [];
+                CONFIG.recommendations.forEach(reco => {
+                    const dimensionScore = partialScores[reco.dimension];
+                    if (typeof dimensionScore === 'number' && dimensionScore < reco.threshold) {
+                        recos.push({
+                            ...reco,
+                            score: dimensionScore,
+                            gap: reco.threshold - dimensionScore
+                        });
+                    }
+                });
+
+                recos.sort((a, b) => {
+                    if (a.priority === b.priority) {
+                        return b.gap - a.gap;
+                    }
+                    return priorityValue(b.priority) - priorityValue(a.priority);
+                });
+
+                return recos.slice(0, 3);
+            }
+
+            function priorityValue(priority) {
+                switch (priority) {
+                    case 'high':
+                        return 3;
+                    case 'medium':
+                        return 2;
+                    default:
+                        return 1;
+                }
+            }
+
+            function determineProfile(finalScore, risks) {
+                if (!finalScore) {
+                    return CONFIG.profiles.defaultMid;
+                }
+                if (!risks.length) {
+                    if (finalScore >= 80) return CONFIG.profiles.defaultHigh;
+                    if (finalScore >= 65) return CONFIG.profiles.defaultMid;
+                    return CONFIG.profiles.defaultLow;
+                }
+                const mainRisk = risks[0][0];
+                return CONFIG.profiles[mainRisk] || CONFIG.profiles.defaultMid;
+            }
+
+            function populateResultsScreen() {
+                if (!resultsElements) return;
+                const bmiInfo = state.metrics || {};
+                const finalScore = state.finalScore || 0;
+
+                resultsElements.scoreValue.textContent = finalScore;
+                updateScoreCircle(resultsElements.scoreCircle, finalScore);
+
+                if (state.profile) {
+                    resultsElements.profileName.textContent = state.profile.name;
+                    resultsElements.profileDescription.textContent = state.profile.description;
+                }
+
+                resultsElements.metrics.innerHTML = '';
+                Object.entries(state.partialScores).forEach(([dimension, value]) => {
+                    if (typeof value !== 'number') return;
+                    const badge = document.createElement('div');
+                    badge.className = 'metric-badge';
+                    badge.innerHTML = `<span>${CONFIG.dimensions[dimension]?.label || dimension}</span><strong>${value}/100</strong>`;
+                    resultsElements.metrics.appendChild(badge);
+                });
+
+                renderList(resultsElements.strengths, state.strengths, 'Encore mieux : ');
+                renderList(resultsElements.risks, state.risks, 'Priorité : ');
+
+                resultsElements.recommendations.innerHTML = '';
+                state.recommendations.forEach(reco => {
+                    const card = document.createElement('article');
+                    card.className = 'recommendation';
+                    card.dataset.priority = reco.priority;
+                    card.innerHTML = `
+                        <div class="badge-tonality">${CONFIG.dimensions[reco.dimension]?.label || 'Priorité'}</div>
+                        <h3>${reco.title}</h3>
+                        <p>${reco.description}</p>
+                        <ul>${reco.actions.map(action => `<li>${action}</li>`).join('')}</ul>
+                    `;
+                    resultsElements.recommendations.appendChild(card);
+                });
+
+                if (bmiInfo && bmiInfo.bmi) {
+                    const interpretation = interpretBmi(bmiInfo.bmi);
+                    resultsElements.bmiReminder.textContent = `Votre IMC actuel est de ${bmiInfo.bmi} (${interpretation.category}). ${interpretation.text}`;
+                } else {
+                    resultsElements.bmiReminder.textContent = '';
+                }
+            }
+
+            function renderList(container, items, prefix) {
+                container.innerHTML = '';
+                if (!items.length) {
+                    const empty = document.createElement('li');
+                    empty.textContent = 'Complétez le quiz pour découvrir vos insights.';
+                    container.appendChild(empty);
+                    return;
+                }
+                items.forEach(([dimension, score]) => {
+                    const item = document.createElement('li');
+                    item.textContent = `${prefix}${CONFIG.dimensions[dimension]?.label || dimension} (${score}/100)`;
+                    container.appendChild(item);
+                });
+            }
+
+            function updateScoreCircle(circle, score) {
+                const normalized = clamp(score, 0, 100);
+                const angle = (normalized / 100) * 360;
+                circle.style.background = `conic-gradient(var(--accent-green) ${angle}deg, rgba(1,255,0,0.18) ${angle}deg)`;
+            }
+
+            function getStoredAnswer(questionId) {
+                return state.answers[questionId];
+            }
+
+            function computeBmi(height, weight) {
+                if (!height || !weight) return null;
+                const meters = height / 100;
+                if (!meters) return null;
+                return Math.round((weight / (meters * meters)) * 10) / 10;
+            }
+
+
+            function updateBmiPointer(pointer, bmi) {
+                if (!bmi) {
+                    pointer.style.left = '50%';
+                    return;
+                }
+                const min = 15;
+                const max = 40;
+                const clamped = clamp(bmi, min, max);
+                const percent = ((clamped - min) / (max - min)) * 100;
+                pointer.style.left = `${percent}%`;
+            }
+
+            function interpretBmi(bmi) {
+                if (!bmi) {
+                    return { category: 'Non renseigné', text: 'Complétez vos données pour obtenir une interprétation.', tone: 'neutral' };
+                }
+                if (bmi < 18.5) {
+                    return { category: 'Maigreur', text: 'Augmenter légèrement vos apports protéiques et la récupération vous aidera à stabiliser votre énergie.', tone: 'alert' };
+                }
+                if (bmi < 25) {
+                    return { category: 'Zone optimale', text: 'Continuez à consolider vos habitudes : maintien musculaire + sommeil profond.', tone: 'success' };
+                }
+                if (bmi < 30) {
+                    return { category: 'Surpoids modéré', text: 'Un recalibrage nutritionnel et un stress réduit peuvent faire baisser votre IMC rapidement.', tone: 'attention' };
+                }
+                return { category: 'Obésité', text: 'Priorité : mouvement progressif + nutrition anti-inflammatoire + gestion du stress.', tone: 'critical' };
+            }
+
+            function scoreFromBmi(bmi) {
+                if (!bmi) return 60;
+                if (bmi < 18.5) return 55;
+                if (bmi < 25) return 95;
+                if (bmi < 27) return 75;
+                if (bmi < 30) return 60;
+                return 35;
+            }
+
+            function validateLead(lead) {
+                const errors = [];
+                if (!lead.firstname || lead.firstname.length < 2) {
+                    errors.push('Prénom requis');
+                }
+                if (!lead.email || !/^\S+@\S+\.\S+$/.test(lead.email)) {
+                    errors.push('Email valide requis');
+                }
+                if (!lead.birthdate) {
+                    errors.push('Date de naissance requise');
+                }
+                if (!lead.consent) {
+                    errors.push('Consentement obligatoire');
+                }
+                return errors;
+            }
+
+            function buildPayload() {
+                const timestamp = new Date().toISOString();
+                const completionTime = state.startedAt ? Date.now() - state.startedAt : null;
+                const partialScores = state.partialScores || {};
+
+                const payload = {
+                    meta: {
+                        quiz_id: CONFIG.meta.quizId,
+                        version: CONFIG.meta.version,
+                        session_id: state.sessionId,
+                        timestamp,
+                        language: CONFIG.meta.language,
+                        brand: CONFIG.meta.brand
+                    },
+                    tracking: Object.assign({}, state.utm, {
+                        device: state.device,
+                        completion_time_ms: completionTime,
+                        started_at: state.startedAt ? new Date(state.startedAt).toISOString() : null
+                    }),
+                    lead: state.lead,
+                    answers: state.answers,
+                    metrics: state.metrics,
+                    scoring: {
+                        partial: partialScores,
+                        final: state.finalScore,
+                        profile: state.profile,
+                        strengths: state.strengths,
+                        risks: state.risks,
+                        recommendations: state.recommendations
+                    },
+                    progression: {
+                        total_steps: state.totalInteractiveSteps,
+                        completed_steps: state.progression.completedCount,
+                        completion_rate: getProgressPercent(),
+                        status: 'completed'
+                    },
+                    notifications: CONFIG.notifications,
+                    cta: CONFIG.cta
+                };
+
+                return payload;
+            }
+
+            async function submitWithRetry(payload) {
+                const maxAttempts = 3;
+                const baseDelay = 700;
+                for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+                    try {
+                        await submitPayload(payload);
+                        return { success: true };
+                    } catch (error) {
+                        if (attempt === maxAttempts) {
+                            return { success: false, error };
+                        }
+                        await wait(baseDelay * attempt);
+                    }
+                }
+                return { success: false };
+            }
+
+            async function submitPayload(payload) {
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), 10000);
+                try {
+                    await fetch(CONFIG.endpoints.googleScriptUrl, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(payload),
+                        signal: controller.signal
+                    });
+                } finally {
+                    clearTimeout(timeout);
+                }
+            }
+
+            function trackEvent(eventName, data = {}) {
+                const payload = Object.assign({
+                    event: eventName,
+                    quiz_id: CONFIG.meta.quizId,
+                    version: CONFIG.meta.version,
+                    session_id: state.sessionId,
+                    timestamp: new Date().toISOString(),
+                    device: state.device,
+                    lang: CONFIG.meta.language,
+                    screen_id: state.currentScreenId
+                }, state.utm, data);
+
+                if (Array.isArray(window.dataLayer)) {
+                    window.dataLayer.push(payload);
+                }
+                if (typeof window.fbq === 'function') {
+                    window.fbq('trackCustom', eventName, payload);
+                }
+                if (!Array.isArray(window.dataLayer)) {
+                    console.log('[trackEvent]', payload);
+                }
+            }
+
+            function showToast(message, tone = 'neutral') {
+                const toast = document.createElement('div');
+                toast.className = 'toast';
+                toast.dataset.tone = tone;
+                toast.textContent = message;
+                toastContainer.appendChild(toast);
+                requestAnimationFrame(() => {
+                    toast.classList.add('visible');
+                });
+                setTimeout(() => {
+                    toast.classList.remove('visible');
+                    setTimeout(() => toast.remove(), 320);
+                }, 2600);
+            }
+
+            function parseUTMParams() {
+                const params = new URLSearchParams(window.location.search);
+                return {
+                    utm_source: params.get('utm_source') || 'direct',
+                    utm_medium: params.get('utm_medium') || 'none',
+                    utm_campaign: params.get('utm_campaign') || 'quiz_vitalite',
+                    utm_term: params.get('utm_term') || null,
+                    utm_content: params.get('utm_content') || null,
+                    referrer: document.referrer || null
+                };
+            }
+
+            function detectDeviceType() {
+                const width = window.innerWidth;
+                if (width < 640) return 'mobile';
+                if (width < 1024) return 'tablet';
+                return 'desktop';
+            }
+
+            function generateUUID() {
+                if (crypto && crypto.randomUUID) {
+                    return crypto.randomUUID();
+                }
+                return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+                    const r = Math.random() * 16 | 0;
+                    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                    return v.toString(16);
+                });
+            }
+
+            function wait(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+
+            function clamp(value, min, max) {
+                if (Number.isNaN(value)) return min;
+                return Math.min(Math.max(value, min), max);
+            }
+        })();
+    </script>
+</body>
+</html>
