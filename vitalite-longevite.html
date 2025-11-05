@@ -1,0 +1,2910 @@
+<!DOCTYPE html>
+<!--
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                                                                              ║
+║                   QUIZ VITALITÉ & LONGÉVITÉ - BETTERME STYLE                ║
+║                              Version 1.0.0 - FR                              ║
+║                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+📋 DESCRIPTION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Flux de quiz autonome (HTML + CSS + JS inline) pour évaluation personnalisée
+de la vitalité et longévité. Inspiré de BetterMe avec scoring pondéré par
+importance scientifique. Aucun build requis - déployable tel quel.
+
+🎯 FONCTIONNALITÉS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✓ 24 écrans (landing, 20 questions, lead capture, calcul, résultats)
+✓ Navigation multi-étapes avec barre de progression animée
+✓ Scoring pondéré scientifiquement (configurable via CONFIG.weights)
+✓ Calcul âge biologique vs chronologique
+✓ Analyse forces/risques + recommandations personnalisées
+✓ Lead capture RGPD-compliant (prénom, email, téléphone, date de naissance)
+✓ Soumission async vers Google Apps Script/Sheets avec retry automatique
+✓ LocalStorage pour reprise de session (24h)
+✓ Tracking GA4 + Facebook Pixel (hooks prêts)
+✓ Mobile-first, responsive, accessible (focus, aria, contrastes)
+✓ Support clavier et tactile
+
+📊 QUESTIONS INCLUSES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Profil : Genre, Âge, Date de naissance, Poids/Taille (IMC)
+• Objectifs : Multi-select jusqu'à 3 objectifs
+• Énergie : Tendance sur 3 ans, dernier pic 100%, crash quotidien
+• Sommeil : Qualité, réveils nocturnes
+• Activité : Test escalier, heures assis, fréquence sport
+• Nutrition : Petit-déjeuner, hydratation, alcool
+• Mental : Niveau de stress
+• Social : Qualité des relations
+• Projection : Vision à 5 ans
+• Motivation : Multi-select motivations principales
+
+⚙️ CONFIGURATION RAPIDE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Toute la configuration se trouve dans l'objet CONFIG (ligne ~1380) :
+
+1. Modifier l'URL Google Apps Script :
+   CONFIG.googleScriptUrl = 'VOTRE_URL_APPS_SCRIPT';
+
+2. Modifier l'URL Calendly pour le CTA :
+   CONFIG.calendlyUrl = 'VOTRE_URL_CALENDLY';
+
+3. Ajuster les poids scientifiques (ligne ~1400) :
+   CONFIG.weights = {
+     stress_level: 10,     // Facteur critique (10 = max)
+     sleep_quality: 10,    // Impact majeur
+     sitting_hours: 10,    // Sédentarité
+     // ... etc
+   }
+
+   Plus le poids est élevé (0-10), plus le facteur impacte le score final.
+   Poids recommandés selon études scientifiques incluses.
+
+4. Personnaliser les recommandations (ligne ~1440) :
+   CONFIG.recommendations = {
+     stress_high: {
+       title: 'Gestion du stress',
+       actions: ['Action 1', 'Action 2', ...],
+       priority: 'high'
+     },
+     // ... etc
+   }
+
+🔗 INTÉGRATION BACKEND (Google Sheets)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Le quiz envoie un payload JSON structuré vers votre Google Apps Script :
+
+Données envoyées :
+• Métadonnées : timestamp, quiz_id, version, submission_id
+• Lead : firstname, email, phone, birthdate
+• Profil : gender, age, weight, height, bmi
+• Réponses : toutes les réponses aux questions
+• Scores : score pondéré, âge biologique
+• Tracking : UTM params, device, duration
+
+Apps Script attendu : webhook POST qui enregistre dans Google Sheets.
+Mode 'no-cors' utilisé. Retries automatiques (3x) en cas d'échec.
+
+📈 TRACKING & ANALYTICS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Events trackés automatiquement :
+• quiz_start : Démarrage du quiz
+• step_view : Affichage d'une étape
+• answer_select : Sélection d'une réponse
+• lead_submit : Soumission du formulaire
+• result_view : Affichage des résultats
+• cta_click : Clic sur CTA (Calendly)
+• quiz_abandon : Abandon (beforeunload)
+
+Tous les events incluent : quiz_id, version, device, utm_params
+
+Pour activer GA4 : Décommenter le code ligne ~2700
+Pour activer Facebook Pixel : Décommenter le code ligne ~2710
+
+🎨 PERSONNALISATION DESIGN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Variables CSS (ligne ~40) :
+:root {
+    --primary-blue: #000324;
+    --accent-green: #01FF00;
+    --light-gray: #F5F5F5;
+    --white: #FFFFFF;
+    --text-dark: #333333;
+    --text-light: #666666;
+    --error-red: #FF4444;
+    --success-green: #00CC00;
+}
+
+Modifier ces valeurs pour adapter aux couleurs de votre marque.
+
+🔒 RGPD & CONFIDENTIALITÉ
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Checkbox de consentement obligatoire
+• Lien vers politique de confidentialité (à compléter)
+• Mention désinscription en 1 clic
+• Données stockées en localStorage max 24h
+• noindex/nofollow dans meta tags
+
+📱 COMPATIBILITÉ
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Mobile-first design
+• Responsive breakpoints à 640px
+• Support iOS 12+, Android 8+, tous navigateurs modernes
+• Fonctionne sans JavaScript (dégradation gracieuse limitée)
+• Support clavier complet (tabulation, enter, espace)
+
+🚀 DÉPLOIEMENT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. Configurer CONFIG.googleScriptUrl
+2. Configurer CONFIG.calendlyUrl
+3. Ajuster les poids/recommandations si nécessaire
+4. Activer tracking GA4/FB si besoin
+5. Uploader le fichier sur votre serveur ou CDN
+6. Accessible via : https://votredomaine.com/vitalite-longevite.html
+
+Aucun build, transpilation ou dépendance requise !
+
+📚 RÉFÉRENCES SCIENTIFIQUES INTÉGRÉES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Stress : Epel et al., 2004 (PMID: 15574496) - Télomères
+• Sommeil : Cappuccio et al., 2010 (PMID: 20469800) - Mortalité
+• Sédentarité : Katzmarzyk et al., 2013 (PMID: 23826128) - +52% mortalité >10h
+• Activité : Lee et al., 2012 - Gain 3-7 ans espérance de vie
+• Alcool : Wood et al., 2018 - Risque cardiovasculaire
+• Relations : Holt-Lunstad et al., 2010 - +50% survie
+
+🛠️ SUPPORT & MODIFICATIONS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Pour ajouter une question :
+1. Ajouter un <div id="screen-XXXX" class="screen"> dans le HTML
+2. Ajouter 'XXXX' dans SCREEN_ORDER (ligne ~1550)
+3. Ajouter les valeurs de scoring dans scoringMatrix (ligne ~1750)
+4. Ajouter le poids dans CONFIG.weights si important
+
+Pour modifier le texte :
+Tout le texte est directement dans le HTML, pas de fichier i18n séparé.
+Structure prête pour ajout d'autres langues (clés structurées).
+
+Pour changer l'endpoint backend :
+Modifier CONFIG.googleScriptUrl (ligne ~1395)
+
+Pour ajuster le CTA :
+Modifier CONFIG.calendlyUrl (ligne ~1398)
+
+═══════════════════════════════════════════════════════════════════════════════
+-->
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Quiz Vitalité & Longévité - OraLife</title>
+    <style>
+        /*
+        ══════════════════════════════════════════════════════════════════════════════
+        QUIZ VITALITÉ & LONGÉVITÉ - STYLE BETTERME
+        ══════════════════════════════════════════════════════════════════════════════
+        
+        Structure autonome : HTML + CSS + JS inline
+        Design : Mobile-first, responsive, accessible
+        Scoring : Pondéré par importance scientifique (configurable)
+        Backend : Google Apps Script / Sheets
+        Tracking : GA4 + Facebook Pixel (hooks)
+        Langue : FR (structure i18n-ready)
+        
+        ══════════════════════════════════════════════════════════════════════════════
+        */
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-blue: #000324;
+            --accent-green: #01FF00;
+            --light-gray: #F5F5F5;
+            --white: #FFFFFF;
+            --text-dark: #333333;
+            --text-light: #666666;
+            --error-red: #FF4444;
+            --success-green: #00CC00;
+            --shadow: 0 10px 30px rgba(0, 3, 36, 0.1);
+            --shadow-hover: 0 15px 40px rgba(0, 3, 36, 0.15);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--light-gray);
+            color: var(--text-dark);
+            line-height: 1.6;
+            overflow-x: hidden;
+            padding-top: 60px;
+        }
+
+        /* Header fixe avec progression */
+        .quiz-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .logo-text {
+            font-size: 24px;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--primary-blue) 0%, var(--accent-green) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .progress-info {
+            color: var(--text-light);
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .progress-bar-container {
+            height: 6px;
+            background: #E0E0E0;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-blue) 0%, var(--accent-green) 100%);
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 0 10px rgba(1, 255, 0, 0.3);
+            width: 0%;
+        }
+
+        /* Container principal */
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: calc(100vh - 60px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--white);
+            border-radius: 20px;
+            padding: 35px;
+            box-shadow: var(--shadow);
+            animation: slideIn 0.4s ease-out;
+            margin-top: 20px;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Gestion des écrans */
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        /* Landing page */
+        .landing {
+            text-align: center;
+        }
+
+        .logo {
+            font-size: 42px;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--primary-blue) 0%, var(--accent-green) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 30px;
+            letter-spacing: -1px;
+        }
+
+        h1 {
+            font-size: 32px;
+            color: var(--primary-blue);
+            margin-bottom: 15px;
+            font-weight: 800;
+            line-height: 1.2;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            color: var(--text-light);
+            margin-bottom: 20px;
+        }
+
+        .hook {
+            background: linear-gradient(135deg, #FFE5E5 0%, #FFEDED 100%);
+            border-left: 4px solid var(--error-red);
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin: 30px 0;
+            font-weight: 600;
+            color: #CC0000;
+        }
+
+        .benefits {
+            text-align: left;
+            margin: 30px 0;
+            padding: 20px;
+            background: var(--light-gray);
+            border-radius: 12px;
+        }
+
+        .benefits ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .benefits li {
+            padding: 8px 0;
+            font-size: 15px;
+        }
+
+        .benefits li::before {
+            content: '✓ ';
+            color: var(--accent-green);
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        /* Boutons */
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-blue) 0%, #000850 100%);
+            color: white;
+            border: none;
+            padding: 18px 40px;
+            font-size: 18px;
+            font-weight: 700;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(0, 3, 36, 0.3);
+            letter-spacing: 0.5px;
+            width: 100%;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 40px rgba(0, 3, 36, 0.4);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-green {
+            background: linear-gradient(135deg, var(--accent-green) 0%, #00CC00 100%);
+            color: var(--primary-blue);
+            font-weight: 900;
+        }
+
+        .btn-back {
+            background: transparent;
+            color: var(--text-light);
+            border: 2px solid var(--light-gray);
+            padding: 12px 25px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+            width: 100%;
+        }
+
+        .btn-back:hover {
+            border-color: var(--primary-blue);
+            color: var(--primary-blue);
+        }
+
+        /* Questions */
+        .question-text {
+            font-size: 24px;
+            color: var(--primary-blue);
+            margin-bottom: 25px;
+            font-weight: 700;
+            text-align: center;
+            line-height: 1.3;
+        }
+
+        .question-subtitle {
+            text-align: center;
+            color: var(--text-light);
+            font-size: 14px;
+            margin-bottom: 20px;
+            font-style: italic;
+        }
+
+        /* Options */
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .option {
+            background: var(--light-gray);
+            border: 2px solid transparent;
+            padding: 12px 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            font-weight: 500;
+            position: relative;
+            text-align: left;
+        }
+
+        .option:hover {
+            background: var(--white);
+            border-color: var(--accent-green);
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .options-grid .option {
+            padding: 10px 12px;
+            font-size: 13px;
+        }
+
+        .options-grid .option:hover {
+            transform: scale(1.05);
+        }
+
+        .option.selected {
+            background: var(--accent-green);
+            border-color: var(--primary-blue);
+            color: var(--primary-blue);
+            font-weight: 700;
+        }
+
+        .option.selected::after {
+            content: '✓';
+            position: absolute;
+            right: 15px;
+            font-size: 18px;
+            color: var(--primary-blue);
+        }
+
+        /* Visual options avec images */
+        .visual-options {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .visual-option {
+            background: var(--white);
+            border: 3px solid var(--light-gray);
+            padding: 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .visual-option:hover {
+            border-color: var(--accent-green);
+            transform: scale(1.03);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .visual-option img {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-bottom: 12px;
+        }
+
+        .visual-option .label {
+            font-weight: 600;
+            font-size: 15px;
+            color: var(--primary-blue);
+        }
+
+        /* Multi-select */
+        .multi-select-info {
+            text-align: center;
+            color: var(--text-light);
+            font-size: 14px;
+            font-style: italic;
+            margin-bottom: 15px;
+        }
+
+        /* Formulaires */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--primary-blue);
+            font-size: 14px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--light-gray);
+            border-radius: 10px;
+            font-size: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent-green);
+            box-shadow: 0 0 0 3px rgba(1, 255, 0, 0.1);
+        }
+
+        .form-input.error {
+            border-color: var(--error-red);
+        }
+
+        .form-error {
+            color: var(--error-red);
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .form-error.visible {
+            display: block;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .checkbox {
+            width: 20px;
+            height: 20px;
+            accent-color: var(--accent-green);
+            margin-top: 2px;
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+
+        /* BMI Display */
+        .bmi-card {
+            background: linear-gradient(135deg, #f0f0f0 0%, #e0e0e0 100%);
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 20px;
+            animation: slideIn 0.3s ease-out;
+            display: none;
+        }
+
+        .bmi-card.visible {
+            display: block;
+        }
+
+        .bmi-card h3 {
+            color: var(--primary-blue);
+            margin-bottom: 10px;
+        }
+
+        #bmi-value {
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        #bmi-interpretation {
+            font-size: 14px;
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        /* Score circle */
+        .score-circle {
+            width: 180px;
+            height: 180px;
+            margin: 25px auto;
+            position: relative;
+        }
+
+        .score-value {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 42px;
+            font-weight: 900;
+            color: var(--primary-blue);
+        }
+
+        /* Résultats */
+        .results-section {
+            background: var(--light-gray);
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+
+        .results-section h3 {
+            color: var(--primary-blue);
+            margin-bottom: 15px;
+        }
+
+        .bio-age-display {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .bio-age-display .age-comparison {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 15px;
+        }
+
+        .bio-age-display .age-box {
+            flex: 1;
+            padding: 15px;
+        }
+
+        .bio-age-display .age-box .age-label {
+            font-size: 12px;
+            color: var(--text-light);
+            text-transform: uppercase;
+        }
+
+        .bio-age-display .age-box .age-value {
+            font-size: 32px;
+            font-weight: 900;
+            color: var(--primary-blue);
+        }
+
+        .recommendations {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+        }
+
+        .recommendations h4 {
+            color: var(--primary-blue);
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .recommendations ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .recommendations li {
+            padding: 8px 0;
+            font-size: 14px;
+            border-bottom: 1px solid var(--light-gray);
+        }
+
+        .recommendations li:last-child {
+            border-bottom: none;
+        }
+
+        .risk-alert {
+            background: #FFF5F5;
+            border: 2px solid var(--error-red);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .risk-alert h3 {
+            color: #CC0000;
+            margin-bottom: 15px;
+        }
+
+        .strength-alert {
+            background: #E5FFE5;
+            border: 2px solid var(--success-green);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .strength-alert h3 {
+            color: #008800;
+            margin-bottom: 15px;
+        }
+
+        /* CTA Final */
+        .final-cta {
+            background: linear-gradient(135deg, var(--primary-blue) 0%, #000850 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        .cta-button {
+            background: var(--accent-green);
+            color: var(--primary-blue);
+            padding: 20px 30px;
+            font-size: 18px;
+            font-weight: 900;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .cta-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 30px rgba(1, 255, 0, 0.3);
+        }
+
+        /* Loading states */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid var(--white);
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .status-message {
+            text-align: center;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            display: none;
+        }
+
+        .status-message.visible {
+            display: block;
+        }
+
+        .status-message.error {
+            background: #FFF5F5;
+            color: var(--error-red);
+        }
+
+        .status-message.success {
+            background: #E5FFE5;
+            color: var(--success-green);
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .card {
+                padding: 20px;
+            }
+            
+            .visual-options,
+            .options-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .question-text {
+                font-size: 20px;
+            }
+            
+            .visual-option img {
+                width: 80px;
+                height: 80px;
+            }
+
+            h1 {
+                font-size: 26px;
+            }
+
+            .btn-primary {
+                font-size: 16px;
+                padding: 15px 30px;
+            }
+        }
+
+        /* Accessibilité */
+        .visually-hidden {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
+
+        /* Focus visible pour clavier */
+        *:focus-visible {
+            outline: 3px solid var(--accent-green);
+            outline-offset: 2px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header avec logo et progression -->
+    <div class="quiz-header">
+        <div class="header-content">
+            <div class="logo-text">ORA LIFE</div>
+            <div class="progress-info">
+                <span id="progress-text">Prêt à commencer</span>
+            </div>
+        </div>
+        <div class="progress-bar-container">
+            <div class="progress-bar" id="progressBar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- LANDING -->
+        <div id="screen-landing" class="screen active" role="main">
+            <div class="card landing">
+                <div class="logo">ORA LIFE</div>
+                <h1>Quiz Vitalité & Longévité</h1>
+                <p class="subtitle">Évaluation scientifique personnalisée - 3 minutes</p>
+                <div class="hook">⚠️ 98% des gens vieillissent 2x plus vite sans le savoir</div>
+                <div class="benefits">
+                    <h3 style="margin-bottom: 15px;">Ce que vous allez découvrir :</h3>
+                    <ul>
+                        <li>Votre score de vitalité personnalisé</li>
+                        <li>Votre âge biologique vs chronologique</li>
+                        <li>Vos forces et risques clés</li>
+                        <li>Plan d'action scientifique prioritaire</li>
+                    </ul>
+                </div>
+                <button class="btn-primary" onclick="startQuiz()">
+                    COMMENCER LE QUIZ GRATUIT
+                </button>
+            </div>
+        </div>
+
+        <!-- Q1: GENRE -->
+        <div id="screen-gender" class="screen" role="main">
+            <div class="card">
+                <h2 class="question-text">Vous êtes ?</h2>
+                <div class="visual-options">
+                    <div class="visual-option" onclick="selectAnswer('gender', 'homme')" role="button" tabindex="0" aria-label="Homme">
+                        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop" alt="">
+                        <div class="label">Homme</div>
+                    </div>
+                    <div class="visual-option" onclick="selectAnswer('gender', 'femme')" role="button" tabindex="0" aria-label="Femme">
+                        <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&h=200&fit=crop" alt="">
+                        <div class="label">Femme</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Q2: ÂGE -->
+        <div id="screen-age" class="screen" role="main">
+            <div class="card">
+                <h2 class="question-text">Quel est votre âge ?</h2>
+                <div class="form-group">
+                    <input 
+                        type="number" 
+                        id="age" 
+                        class="form-input" 
+                        placeholder="Ex: 42"
+                        min="18"
+                        max="100"
+                        style="font-size: 24px; text-align: center;"
+                        aria-label="Votre âge"
+                    >
+                    <div class="form-error" id="age-error">Veuillez entrer un âge entre 18 et 100 ans</div>
+                </div>
+                <button class="btn-primary" onclick="validateAndNext('age')">
+                    CONTINUER →
+                </button>
+                <button class="btn-back" onclick="goToPrevStep()">← Retour</button>
+            </div>
+        </div>
+
+        <!-- Q3: DATE DE NAISSANCE -->
+        <div id="screen-birthdate" class="screen" role="main">
+            <div class="card">
+                <h2 class="question-text">Date de naissance</h2>
+                <p class="question-subtitle">Pour affiner votre profil biologique</p>
+                <div class="form-group">
+                    <input 
+                        type="date" 
+                        id="birthdate" 
+                        class="form-input"
+                        max=""
+                        aria-label="Date de naissance"
+                    >
+                    <div class="form-error" id="birthdate-error">Veuillez entrer une date de naissance valide</div>
+                </div>
+                <button class="btn-primary" onclick="validateAndNext('birthdate')">
+                    CONTINUER →
+                </button>
+                <button class="btn-back" onclick="goToPrevStep()">← Retour</button>
+            </div>
+        </div>
+
+        <!-- Q4: POIDS ET TAILLE -->
+        <div id="screen-measurements" class="screen" role="main">
+            <div class="card">
+                <h2 class="question-text">Vos mensurations actuelles</h2>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="form-group">
+                        <label class="form-label" for="weight">Poids (kg)</label>
+                        <input type="number" id="weight" class="form-input" 
+                               placeholder="75" min="30" max="200" onchange="calculateBMI()">
+                        <div class="form-error" id="weight-error">Entre 30 et 200 kg</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="height">Taille (cm)</label>
+                        <input type="number" id="height" class="form-input" 
+                               placeholder="175" min="120" max="230" onchange="calculateBMI()">
+                        <div class="form-error" id="height-error">Entre 120 et 230 cm</div>
+                    </div>
+                </div>
+                <div id="bmi-display" class="bmi-card">
+                    <h3>Votre IMC : <span id="bmi-value">--</span></h3>
+                    <div id="bmi-interpretation"></div>
+                </div>
+                <button class="btn-primary" onclick="validateAndNext('measurements')">
+                    CONTINUER →
+                </button>
+                <button class="btn-back" onclick="goToPrevStep()">← Retour</button>
+            </div>
+        </div>
+
+        <!-- Q5: OBJECTIFS -->
+        <div id="screen-objectives" class="screen" role="main">
+            <div class="card">
+                <h2 class="question-text">Vos objectifs prioritaires ?</h2>
+                <p class="multi-select-info">Sélectionnez jusqu'à 3 options</p>
+                <div class="options" id="objectives-container">
+                    <div class="option" onclick="toggleMultiSelect('objectives', 'Augmenter mon énergie', this, 3)">⚡ Augmenter mon énergie</div>
+                    <div class="option" onclick="toggleMultiSelect('objectives', 'Optimiser mon corps', this, 3)">💪 Optimiser mon corps</div>
+                    <div class="option" onclick="toggleMultiSelect('objectives', 'Améliorer ma concentration', this, 3)">🧠 Améliorer ma concentration</div>
+                    <div class="option" onclick="toggleMultiSelect('objectives', 'Vivre plus longtemps', this, 3)">⏰ Vivre plus longtemps</div>
+                    <div class="option" onclick="toggleMultiSelect('objectives', 'Mieux dormir', this, 3)">😴 Mieux dormir</div>
+                    <div class="option" onclick="toggleMultiSelect('objectives', 'Réduire le stress', this, 3)">🧘 Réduire le stress</div>
+                </div>
+                <div class="form-error" id="objectives-error">Sélectionnez au moins 1 objectif</div>
+                <button class="btn-primary" onclick="validateAndNext('objectives')">
+                    CONTINUER →
+                </button>
+                <button class="btn-back" onclick="goToPrevStep()">← Retour</button>
+            </div>
+        </div>
+
+        <!-- Q6: NIVEAU D'ÉNERGIE -->
+        <div id="screen-energy" class="screen" role="main">
+            <div class="card">
+                <h2 class="question-text">Comparé à il y a 3 ans, votre niveau d'énergie :</h2>
+                <div class="options">
+                    <div class="option" onclick="selectAnswer('energy_trend', 'Meilleur qu\'avant')">📈 Meilleur qu'avant</div>
+                    <div class="option" onclick="selectAnswer('energy_trend', 'Identique')">➡️ Identique</div>
+                    <div class="option" onclick="selectAnswer('energy_trend', 'Baisse légère (-20%)')">📉 Baisse légère (-20%)</div>
+                    <div class="option" onclick="selectAnswer('energy_trend', 'Baisse importante (-40%)')">⚠️ Baisse importante (-40%)</div>
+                    <div class="option" onclick="selectAnswer('energy_trend', 'Effondrement (-60%+)')">🚨 Effondrement (-60%+)</div>
+                </div>
+                <button class="btn-back" onclick="goToPrevStep()">← Retour</button>
+            </div>
+        </div>
+
+        <!-- Q7: DERNIÈRE FOIS À 100% -->
+        <div id="screen-peak" class="screen" role="main">
+            <div class="card">
+                <h2 class="question-text">La dernière fois que vous vous êtes senti(e) à 100% :</h2>
+                <div class="options">
+                    <div class="option" onclick="selectAnswer('last_peak', 'Cette semaine')">✨ Cette semaine</div>
+                    <div class="option" onclick="selectAnswer('last_peak', 'Ce mois-ci')">📅 Ce mois-ci</div>
+                    <div class="option" onclick="selectAnswer('last_peak', 'Cette année')">📆 Cette année</div>
+                    <div class="option" onclick="selectAnswer('last_peak', 'L\'année dernière')">⏰ L'année dernière</div>
+                    <div class="option" onclick="selectAnswer('last_peak', 'Je ne me souviens plus')">❓ Je ne me souviens plus</div>
+                </div>
+                <button class="btn-back" onclick="goToPrevStep()">← Retour</button>
+            </div>
+        </div>
+
+        <!-- Q8: CRASH ÉNERGÉTIQUE -->
+        <div id="screen-crash" class="screen" role="main">
+            <div class="card">
+                <h2 class="question-text">Votre premier coup de fatigue de la journée arrive :</h2>
+                <div class="options">
+                    <div class="option" onclick="selectAnswer('energy_crash', 'Jamais')">💪 Jamais</div>
+                    <div class="option" onclick="selectAnswer('energy_crash', 'Après 17h')">🌅 Après 17h</div>
+                    <div class="option" onclick="selectAnswer('energy_crash', 'Vers 14h-15h')">☕ Vers 14h-15h</div>
+                    <div class="option" onclick="selectAnswer('energy_crash', 'Après le déjeuner')">🍽️ Après le déjeuner</div>
+                    <div class="option" onclick="selectAnswer('energy_crash', 'Dès le matin')">😴 Dès le matin</div>
+                </div>
+                <button class="btn-back" onclick="goToPrevStep()">← Retour</button>
+            </div>
+        </div>
+
+        <!-- Q9: QUALITÉ DU SOMMEIL -->
+        <div id="screen-sleep" class="screen" role="main">
+            <div class="card">
+                <h2 class="question-text">Qualité de votre sommeil :</h2>
+                <div class="options">
+                    <div class="option" onclick="selectAnswer('sleep_quality', '7-9h de sommeil profond')">🌙 7-9h de sommeil profond</div>
+                    <div class="option" onclick="selectAnswer('sleep_quality', '6-7h correct')">😊 6-7h correct</div>
+                    <div class="option" onclick="selectAnswer('sleep_quality', '5-6h léger')">😐 5-6h léger</div>
+                    <div class="option" onclick="selectAnswer('sleep_quality', 'Moins de 5h')">😞 Moins de 5h</div>
+                    <div class="option" onclick="selectAnswer('sleep_quality', 'Insomnie chronique')">😵 Insomnie chronique</div>
+                </div>
+                <button class="btn-back" onclick="goToPrevStep()">← Retour</button>
+            </div>
+        </div>
+
+        <!-- Q10: RÉVEILS NOCTURNES -->
+        <div id="screen-wakeups" class="screen" role="main">
+            <div class="card">
+                <h2 class="question-text">Réveils nocturnes par nuit :</h2>
+                <div class="options">
+                    <div class="option" onclick="selectAnswer('night_wakeups', '0 (sommeil continu)')">✨ 0 (sommeil continu)</div>
+                    <div class="option" onclick="selectAnswer('night_wakeups', '1 fois')">1️⃣ 1 fois</div>
+                    <div class="option" onclick="selectAnswer('night_wakeups', '2-3 fois')">2️⃣ 2-3 fois</div>
+                    <div class="option" onclick="selectAnswer('night_wakeups', '4+ fois')">😰 4+ fois</div>
+                    <div class="option" onclick="selectAnswer('night_wakeups', 'Très fragmenté')">💔 Très fragmenté</div>
+                </div>
+                <button class="btn-back" onclick="goToPrevStep()">← Retour</button>
+            </div>
+        </div>
+
+        <!-- Q11: ACTIVITÉ PHYSIQUE -->
+        <div id="screen-activity" class="screen" role="main">
+            <div class="card">
+                <h2 class="question-text">Test de l'escalier (2 étages sans pause) :</h2>
+                <div class="options">
+                    <div class="option" onclick="selectAnswer('stairs_test', 'Facile, en parlant')">💪 Facile, en parlant</div>
+                    <div class="option" onclick="selectAnswer('stairs_test', 'Léger essoufflement')">😊 Léger essoufflement</div>
+                    <div class="option" onclick="selectAnswer('stairs_test', 'Besoin de reprendre mon souffle')">😤 Besoin de reprendre mon souffle</div>
+                    <div class="option" onclick="selectAnswer('stairs_test', 'Très difficile')">😰 Très difficile</div>
+                    <div class="option" onclick="selectAnswer('stairs_test', 'J\'évite les escaliers')">🚫 J'évite les escaliers</div>
+                </div>
+                <button class="btn-back" onclick="goToPrevStep()">← Retour</button>
+            </div>
+        </div>
+
+        <!-- Q12: HEURES ASSIS -->
+        <div id="screen-sitting" class="screen" role="main">
+            <div class="card">
+                <h2 class="question-text">Heures assis par jour (travail + loisirs) :</h2>
+                <div class="options">
+                    <div class="option" onclick="selectAnswer('sitting_hours', 'Moins de 4h')">✅ Moins de 4h</div>
+                    <div class="option" onclick="selectAnswer('sitting_hours', '4-6h')">😊 4-6h</div>
+                    <div class="option" onclick="selectAnswer('sitting_hours', '6-8h')">⚠️ 6-8h</div>
+                    <div class="option" onclick="selectAnswer('sitting_hours', '8-10h')">🚨 8-10h</div>
+                    <div class="option" onclick="selectAnswer('sitting_hours', 'Plus de 10h')">💀 Plus de 10h</div>
+                </div>
+                <button class="btn-back" onclick="goToPrevStep()">← Retour</button>
+            </div>
+        </div>
+
+        <!-- Q13: FRÉQUENCE SPORT -->
+        <div id="screen-sport" class="screen" role="main">
+            <div class="card">
+                <h2 class="question-text">Fréquence d'activité physique :</h2>
+                <div class="options">
+                    <div class="option" onclick="selectAnswer('sport_frequency', 'Tous les jours')">💪 Tous les jours</div>
+                    <div class="option" onclick="selectAnswer('sport_frequency', '4-6 fois/semaine')">🏃 4-6 fois/semaine</div>
+                    <div class="option" onclick="selectAnswer('sport_frequency', '2-3 fois/semaine')">🚶 2-3 fois/semaine</div>
+                    <div class="option" onclick="selectAnswer('sport_frequency', '1 fois/semaine')">😐 1 fois/semaine</div>
+                    <div class="option" onclick="selectAnswer('sport_frequency', 'Rarement ou jamais')">🛋️ Rarement ou jamais</div>
+                </div>
+                <button class="btn-back" onclick="goToPrevStep()">← Retour</button>
+            </div>
+        </div>
+
+        <!-- Q14: NIVEAU DE STRESS -->
+        <div id="screen-stress" class="screen" role="main">
+            <div class="card">
+                <h2 class="question-text">Votre niveau de stress au quotidien :</h2>
+                <div class="options">
+                    <div class="option" onclick="selectAnswer('stress_level', 'Zen permanent')">🧘 Zen permanent</div>
+                    <div class="option" onclick="selectAnswer('stress_level', 'Gérable')">😊 Gérable</div>
+                    <div class="option" onclick="selectAnswer('stress_level', 'Élevé régulièrement')">😰 Élevé régulièrement</div>
+                    <div class="option" onclick="selectAnswer('stress_level', 'Très élevé quotidien')">😫 Très élevé quotidien</div>
+                    <div class="option" onclick="selectAnswer('stress_level', 'Burnout / Mode survie')">🆘 Burnout / Mode survie</div>
+                </div>
+                <button class="btn-back" onclick="goToPrevStep()">← Retour</button>
+            </div>
+        </div>
+
+        <!-- Q15: ALIMENTATION -->
+        <div id="screen-nutrition" class="screen" role="main">
+            <div class="card">
+                <h2 class="question-text">Votre petit-déjeuner typique :</h2>
+                <div class="options">
+                    <div class="option" onclick="selectAnswer('breakfast', 'Jeûne intermittent')">⏰ Jeûne intermittent</div>
+                    <div class="option" onclick="selectAnswer('breakfast', 'Protéines + bons gras')">🥑 Protéines + bons gras</div>
+                    <div class="option" onclick="selectAnswer('breakfast', 'Céréales complètes + fruits')">🥣 Céréales complètes + fruits</div>
+                    <div class="option" onclick="selectAnswer('breakfast', 'Pain blanc + confiture')">🍞 Pain blanc + confiture</div>
+                    <div class="option" onclick="selectAnswer('breakfast', 'Juste café ou rien')">☕ Juste café ou rien</div>
+                </div>
+                <button class="btn-back" onclick="goToPrevStep()">← Retour</button>
+            </div>
+        </div>
+
+        <!-- Q16: HYDRATATION -->
+        <div id="screen-hydration" class="screen" role="main">
+            <div class="card">
+                <h2 class="question-text">Hydratation quotidienne :</h2>
+                <div class="options">
+                    <div class="option" onclick="selectAnswer('hydration', '2L+ d\'eau')">💧 2L+ d'eau</div>
+                    <div class="option" onclick="selectAnswer('hydration', '1.5-2L')">💦 1.5-2L</div>
+                    <div class="option" onclick="selectAnswer('hydration', '1-1.5L')">😐 1-1.5L</div>
+                    <div class="option" onclick="selectAnswer('hydration', 'Moins d\'1L')">⚠️ Moins d'1L</div>
+                    <div class="option" onclick="selectAnswer('hydration', 'Surtout café/sodas')">☕ Surtout café/sodas</div>
+                </div>
+                <button class="btn-back" onclick="goToPrevStep()">← Retour</button>
+            </div>
+        </div>
+
+        <!-- Q17: ALCOOL -->
+        <div id="screen-alcohol" class="screen" role="main">
+            <div class="card">
+                <h2 class="question-text">Consommation d'alcool par semaine :</h2>
+                <div class="options">
+                    <div class="option" onclick="selectAnswer('alcohol', 'Jamais')">🚫 Jamais</div>
+                    <div class="option" onclick="selectAnswer('alcohol', '1-3 verres')">🍷 1-3 verres</div>
+                    <div class="option" onclick="selectAnswer('alcohol', '4-7 verres')">🍺 4-7 verres</div>
+                    <div class="option" onclick="selectAnswer('alcohol', '8-14 verres')">⚠️ 8-14 verres</div>
+                    <div class="option" onclick="selectAnswer('alcohol', '15+ verres')">🚨 15+ verres</div>
+                </div>
+                <button class="btn-back" onclick="goToPrevStep()">← Retour</button>
+            </div>
+        </div>
+
+        <!-- Q18: RELATIONS SOCIALES -->
+        <div id="screen-social" class="screen" role="main">
+            <div class="card">
+                <h2 class="question-text">Qualité de vos relations sociales :</h2>
+                <div class="options">
+                    <div class="option" onclick="selectAnswer('social_relations', 'Très riches et nombreuses')">❤️ Très riches et nombreuses</div>
+                    <div class="option" onclick="selectAnswer('social_relations', 'Satisfaisantes')">😊 Satisfaisantes</div>
+                    <div class="option" onclick="selectAnswer('social_relations', 'Limitées')">😐 Limitées</div>
+                    <div class="option" onclick="selectAnswer('social_relations', 'Difficiles')">😞 Difficiles</div>
+                    <div class="option" onclick="selectAnswer('social_relations', 'Isolement social')">😔 Isolement social</div>
+                </div>
+                <button class="btn-back" onclick="goToPrevStep()">← Retour</button>
+            </div>
+        </div>
+
+        <!-- Q19: PROJECTION -->
+        <div id="screen-projection" class="screen" role="main">
+            <div class="card">
+                <h2 class="question-text">Dans 5 ans, vous vous voyez :</h2>
+                <div class="options">
+                    <div class="option" onclick="selectAnswer('projection_5years', 'En meilleure forme')">📈 En meilleure forme</div>
+                    <div class="option" onclick="selectAnswer('projection_5years', 'Stable')">➡️ Stable</div>
+                    <div class="option" onclick="selectAnswer('projection_5years', 'Légèrement diminué')">📉 Légèrement diminué (-20%)</div>
+                    <div class="option" onclick="selectAnswer('projection_5years', 'Fortement diminué')">⚠️ Fortement diminué (-40%)</div>
+                    <div class="option" onclick="selectAnswer('projection_5years', 'J\'ai peur d\'y penser')">😰 J'ai peur d'y penser</div>
+                </div>
+                <button class="btn-back" onclick="goToPrevStep()">← Retour</button>
+            </div>
+        </div>
+
+        <!-- Q20: MOTIVATION -->
+        <div id="screen-motivation" class="screen" role="main">
+            <div class="card">
+                <h2 class="question-text">Ce qui vous motive VRAIMENT à changer :</h2>
+                <p class="multi-select-info">Sélectionnez jusqu'à 3 motivations</p>
+                <div class="options options-grid" id="motivations-container">
+                    <div class="option" onclick="toggleMultiSelect('motivations', 'Voir mes petits-enfants grandir', this, 3)">👶 Mes petits-enfants</div>
+                    <div class="option" onclick="toggleMultiSelect('motivations', 'Rester autonome', this, 3)">🏃 Rester autonome</div>
+                    <div class="option" onclick="toggleMultiSelect('motivations', 'Continuer à performer', this, 3)">🚀 Continuer à performer</div>
+                    <div class="option" onclick="toggleMultiSelect('motivations', 'Être un exemple', this, 3)">⭐ Être un exemple</div>
+                    <div class="option" onclick="toggleMultiSelect('motivations', 'Ne pas souffrir', this, 3)">💊 Ne pas souffrir</div>
+                    <div class="option" onclick="toggleMultiSelect('motivations', 'Profiter de la retraite', this, 3)">🌴 Profiter de la retraite</div>
+                    <div class="option" onclick="toggleMultiSelect('motivations', 'Garder mon énergie', this, 3)">⚡ Garder mon énergie</div>
+                    <div class="option" onclick="toggleMultiSelect('motivations', 'Rester séduisant(e)', this, 3)">💫 Rester séduisant(e)</div>
+                </div>
+                <div class="form-error" id="motivations-error">Sélectionnez au moins 1 motivation</div>
+                <button class="btn-primary" onclick="validateAndNext('motivations')">
+                    CONTINUER →
+                </button>
+                <button class="btn-back" onclick="goToPrevStep()">← Retour</button>
+            </div>
+        </div>
+
+        <!-- LEAD CAPTURE -->
+        <div id="screen-lead" class="screen" role="main">
+            <div class="card">
+                <h2 class="question-text">📊 Dernière étape !</h2>
+                <p class="subtitle" style="text-align: center; margin-bottom: 30px;">
+                    Recevez votre analyse complète par email<br>
+                    <strong>100% gratuit • Résultats immédiats</strong>
+                </p>
+                
+                <div class="form-group">
+                    <label class="form-label" for="firstname">Prénom *</label>
+                    <input 
+                        type="text" 
+                        id="firstname" 
+                        class="form-input" 
+                        placeholder="Votre prénom"
+                        required
+                        aria-required="true"
+                    >
+                    <div class="form-error" id="firstname-error">Veuillez entrer votre prénom</div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="email">Email *</label>
+                    <input 
+                        type="email" 
+                        id="email" 
+                        class="form-input" 
+                        placeholder="votre@email.com"
+                        required
+                        aria-required="true"
+                    >
+                    <div class="form-error" id="email-error">Veuillez entrer un email valide</div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="phone">Téléphone *</label>
+                    <input 
+                        type="tel" 
+                        id="phone" 
+                        class="form-input" 
+                        placeholder="06 XX XX XX XX"
+                        required
+                        aria-required="true"
+                    >
+                    <div class="form-error" id="phone-error">Veuillez entrer un numéro valide</div>
+                </div>
+                
+                <div class="checkbox-group">
+                    <input type="checkbox" id="consent" class="checkbox" required aria-required="true">
+                    <label for="consent" style="font-size: 13px; color: var(--text-light);">
+                        J'accepte de recevoir mon <strong>analyse détaillée par email</strong> 
+                        et les conseils personnalisés OraLife.
+                        <br><a href="#" style="color: var(--primary-blue); text-decoration: underline;">Politique de confidentialité</a>
+                        <br><span style="font-size: 11px; opacity: 0.8;">
+                        (Désinscription en 1 clic • Pas de spam • Conforme RGPD)
+                        </span>
+                    </label>
+                </div>
+                
+                <div class="status-message" id="submit-status"></div>
+                
+                <button class="btn-primary btn-green" onclick="submitLead()" id="submit-btn">
+                    VOIR MON ANALYSE →
+                </button>
+                
+                <p style="text-align: center; font-size: 12px; color: var(--text-light); margin-top: 20px;">
+                    🔒 Données 100% sécurisées
+                </p>
+                
+                <button class="btn-back" onclick="goToPrevStep()">← Retour</button>
+            </div>
+        </div>
+
+        <!-- ÉCRAN CALCUL -->
+        <div id="screen-calculating" class="screen" role="main">
+            <div class="card" style="text-align: center;">
+                <h2 style="color: var(--primary-blue); margin-bottom: 30px;">
+                    Analyse de vos réponses en cours...
+                </h2>
+                
+                <div class="score-circle">
+                    <svg width="180" height="180">
+                        <circle cx="90" cy="90" r="80" fill="none" stroke="#E0E0E0" stroke-width="10"/>
+                        <circle 
+                            cx="90" cy="90" r="80" 
+                            fill="none" 
+                            stroke="url(#gradient)" 
+                            stroke-width="10"
+                            stroke-dasharray="502"
+                            stroke-dashoffset="502"
+                            transform="rotate(-90 90 90)"
+                            id="calculating-circle"
+                        />
+                        <defs>
+                            <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" style="stop-color:var(--primary-blue);stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:var(--accent-green);stop-opacity:1" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                    <div class="score-value">
+                        <span class="loading"></span>
+                    </div>
+                </div>
+                
+                <div id="calculatingSteps" style="margin-top: 30px;">
+                    <p style="color: var(--text-light); margin: 10px 0;">
+                        <span id="step1" style="opacity: 0.3;">✓ Analyse de votre profil...</span>
+                    </p>
+                    <p style="color: var(--text-light); margin: 10px 0;">
+                        <span id="step2" style="opacity: 0.3;">✓ Calcul de votre âge biologique...</span>
+                    </p>
+                    <p style="color: var(--text-light); margin: 10px 0;">
+                        <span id="step3" style="opacity: 0.3;">✓ Génération des recommandations...</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ÉCRAN RÉSULTATS -->
+        <div id="screen-results" class="screen" role="main">
+            <div class="card">
+                <h1 style="text-align: center; color: var(--primary-blue); margin-bottom: 20px;">
+                    Votre Score de Vitalité
+                </h1>
+                
+                <div class="score-circle">
+                    <svg width="180" height="180">
+                        <circle cx="90" cy="90" r="80" fill="none" stroke="#E0E0E0" stroke-width="10"/>
+                        <circle 
+                            id="scoreCircle"
+                            cx="90" cy="90" r="80" 
+                            fill="none" 
+                            stroke="url(#gradient2)" 
+                            stroke-width="10"
+                            stroke-dasharray="502"
+                            stroke-dashoffset="502"
+                            transform="rotate(-90 90 90)"
+                        />
+                        <defs>
+                            <linearGradient id="gradient2" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" style="stop-color:var(--primary-blue);stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:var(--accent-green);stop-opacity:1" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                    <div class="score-value" id="finalScore">--</div>
+                </div>
+                
+                <div id="scoreInterpretation" style="text-align: center; margin: 20px 0;">
+                    <!-- Rempli dynamiquement -->
+                </div>
+
+                <!-- Âge biologique -->
+                <div class="bio-age-display">
+                    <h3 style="color: var(--primary-blue); margin-bottom: 15px;">Votre Âge Biologique</h3>
+                    <div class="age-comparison">
+                        <div class="age-box">
+                            <div class="age-label">Âge Chronologique</div>
+                            <div class="age-value" id="chronoAge">--</div>
+                        </div>
+                        <div class="age-box">
+                            <div class="age-label">Âge Biologique</div>
+                            <div class="age-value" id="bioAge" style="color: var(--accent-green);">--</div>
+                        </div>
+                    </div>
+                    <p id="ageInterpretation" style="margin-top: 15px; font-size: 14px; color: var(--text-dark);">
+                        <!-- Rempli dynamiquement -->
+                    </p>
+                </div>
+                
+                <!-- Forces -->
+                <div class="strength-alert">
+                    <h3>✅ Vos Forces Actuelles</h3>
+                    <div id="strengthPoints">
+                        <!-- Rempli dynamiquement -->
+                    </div>
+                </div>
+
+                <!-- Risques -->
+                <div class="risk-alert">
+                    <h3>⚠️ Points d'Attention</h3>
+                    <div id="riskPoints">
+                        <!-- Rempli dynamiquement -->
+                    </div>
+                </div>
+
+                <!-- Recommandations -->
+                <div class="recommendations">
+                    <h4>🎯 Vos Actions Prioritaires</h4>
+                    <ul id="recommendationsList">
+                        <!-- Rempli dynamiquement -->
+                    </ul>
+                </div>
+
+                <!-- CTA FINAL -->
+                <div class="final-cta">
+                    <h3 style="margin-bottom: 20px;">Prêt(e) à passer à l'action ?</h3>
+                    <button class="cta-button" onclick="trackEvent('cta_click', {cta_type: 'calendly'}); bookCall();">
+                        📞 RÉSERVER UN APPEL STRATÉGIQUE GRATUIT
+                    </button>
+                    <p style="margin-top: 15px; font-size: 14px; opacity: 0.9;">
+                        15 min avec un expert • Plan d'action personnalisé
+                    </p>
+                </div>
+                
+                <p style="text-align: center; font-size: 12px; color: var(--text-light); margin-top: 20px;">
+                    📧 Votre analyse détaillée a été envoyée à <span id="userEmail"></span>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT PRINCIPAL -->
+    <script>
+        /*
+        ══════════════════════════════════════════════════════════════════════════════
+        CONFIGURATION DU QUIZ
+        ══════════════════════════════════════════════════════════════════════════════
+        
+        Modifier cette section pour personnaliser le quiz :
+        - quizId : Identifiant unique du quiz
+        - version : Version du quiz pour tracking
+        - endpoints : URL du Google Apps Script
+        - calendlyUrl : URL de réservation Calendly
+        - weights : Poids scientifiques pour chaque facteur (plus élevé = plus important)
+        
+        ══════════════════════════════════════════════════════════════════════════════
+        */
+        
+        const CONFIG = {
+            // Métadonnées du quiz
+            quizId: 'vitalite_longevite_v1',
+            version: '1.0.0',
+            language: 'fr',
+            
+            // Endpoints backend
+            googleScriptUrl: 'https://script.google.com/macros/s/AKfycbwjyAjH9Nl6y2IeRWHi5Qrr6ftqVilH4T9RMPAdNXM_XYVuaN0WFzrPPYwVL8oOZR0W/exec',
+            
+            // CTA
+            calendlyUrl: 'https://calendly.com/oralife/consultation',
+            
+            // Nombre de tentatives d'envoi
+            maxRetries: 3,
+            
+            // Poids scientifiques par facteur (sur 10)
+            // Plus le poids est élevé, plus le facteur impacte le score final
+            weights: {
+                // FACTEURS CRITIQUES (Poids 10) - Impact majeur sur longévité
+                stress_level: 10,        // Epel et al., 2004 - Raccourcissement des télomères
+                sleep_quality: 10,       // Cappuccio et al., 2010 - Mortalité toutes causes
+                sitting_hours: 10,       // Katzmarzyk et al., 2013 - +52% mortalité >10h
+                
+                // FACTEURS TRÈS IMPORTANTS (Poids 8-9)
+                sport_frequency: 9,      // Lee et al., 2012 - Gain de 3-7 ans d'espérance de vie
+                alcohol: 8,              // Wood et al., 2018 - Risque cardiovasculaire
+                social_relations: 8,     // Holt-Lunstad et al., 2010 - +50% survie avec bonnes relations
+                
+                // FACTEURS IMPORTANTS (Poids 6-7)
+                energy_trend: 7,         // Indicateur précoce de déclin
+                stairs_test: 7,          // Marqueur capacité cardiovasculaire
+                night_wakeups: 6,        // Qualité sommeil profond
+                hydration: 6,            // Fonctions cellulaires
+                
+                // FACTEURS MODÉRÉS (Poids 4-5)
+                last_peak: 5,            // Indicateur bien-être général
+                energy_crash: 5,         // Régulation glycémique et hormonale
+                breakfast: 4,            // Qualité nutritionnelle
+                
+                // FACTEURS COMPLÉMENTAIRES (Poids 2-3)
+                projection_5years: 3,    // État d'esprit et motivation
+                objectives: 2,           // Clarté des intentions
+                motivations: 2           // Engagement au changement
+            },
+            
+            // Mapping des résultats vers recommandations
+            recommendations: {
+                stress_high: {
+                    title: 'Gestion du stress',
+                    actions: [
+                        'Pratiquer la cohérence cardiaque (5 min, 3x/jour)',
+                        'Méditation guidée quotidienne (10 min)',
+                        'Marche en nature sans téléphone'
+                    ],
+                    priority: 'high'
+                },
+                sleep_poor: {
+                    title: 'Optimisation du sommeil',
+                    actions: [
+                        'Routine pré-sommeil fixe (22h)',
+                        'Chambre fraîche (18°C) et totalement noire',
+                        'Coupure écrans 2h avant le coucher',
+                        'Magnésium bisglycinate le soir'
+                    ],
+                    priority: 'high'
+                },
+                sitting_excessive: {
+                    title: 'Réduction sédentarité',
+                    actions: [
+                        'Pause active toutes les heures (2 min)',
+                        'Réunions en marchant quand possible',
+                        'Bureau debout alterné'
+                    ],
+                    priority: 'high'
+                },
+                activity_low: {
+                    title: 'Augmentation activité physique',
+                    actions: [
+                        'Marche rapide 30 min/jour',
+                        'Musculation 2x/semaine (30 min)',
+                        'Escaliers prioritaires sur ascenseur'
+                    ],
+                    priority: 'medium'
+                },
+                nutrition_poor: {
+                    title: 'Optimisation nutritionnelle',
+                    actions: [
+                        'Petit-déjeuner protéiné (30g protéines)',
+                        'Jeûne intermittent 16/8',
+                        'Réduction sucres rapides'
+                    ],
+                    priority: 'medium'
+                },
+                social_weak: {
+                    title: 'Renforcement lien social',
+                    actions: [
+                        'Activité sociale hebdomadaire planifiée',
+                        'Appels réguliers aux proches',
+                        'Rejoindre un club ou association'
+                    ],
+                    priority: 'medium'
+                }
+            }
+        };
+
+        /*
+        ══════════════════════════════════════════════════════════════════════════════
+        ÉTAT GLOBAL DE L'APPLICATION
+        ══════════════════════════════════════════════════════════════════════════════
+        */
+        
+        let state = {
+            currentStep: 0,
+            answers: {},
+            multiSelects: {},
+            leadInfo: {},
+            score: 0,
+            bioAge: 0,
+            startTime: null,
+            utmParams: {}
+        };
+
+        // Définition de l'ordre des écrans
+        const SCREEN_ORDER = [
+            'landing', 'gender', 'age', 'birthdate', 'measurements', 'objectives',
+            'energy', 'peak', 'crash', 'sleep', 'wakeups', 'activity', 'sitting',
+            'sport', 'stress', 'nutrition', 'hydration', 'alcohol', 'social',
+            'projection', 'motivation', 'lead', 'calculating', 'results'
+        ];
+
+        /*
+        ══════════════════════════════════════════════════════════════════════════════
+        INITIALISATION
+        ══════════════════════════════════════════════════════════════════════════════
+        */
+        
+        // Au chargement de la page
+        window.addEventListener('DOMContentLoaded', function() {
+            // Capturer les paramètres UTM
+            captureUTMParams();
+            
+            // Restaurer la session si elle existe
+            restoreSession();
+            
+            // Initialiser la date max pour la date de naissance
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('birthdate').max = today;
+            
+            // Support clavier pour les options visuelles
+            setupKeyboardNavigation();
+            
+            console.log('Quiz initialisé - ID:', CONFIG.quizId, 'Version:', CONFIG.version);
+        });
+
+        function captureUTMParams() {
+            const urlParams = new URLSearchParams(window.location.search);
+            state.utmParams = {
+                utm_source: urlParams.get('utm_source') || '',
+                utm_medium: urlParams.get('utm_medium') || '',
+                utm_campaign: urlParams.get('utm_campaign') || '',
+                utm_term: urlParams.get('utm_term') || '',
+                utm_content: urlParams.get('utm_content') || ''
+            };
+        }
+
+        function setupKeyboardNavigation() {
+            document.querySelectorAll('.visual-option').forEach(el => {
+                el.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        this.click();
+                    }
+                });
+            });
+        }
+
+        /*
+        ══════════════════════════════════════════════════════════════════════════════
+        GESTION DE SESSION (localStorage)
+        ══════════════════════════════════════════════════════════════════════════════
+        */
+        
+        function saveSession() {
+            try {
+                localStorage.setItem('quiz_state', JSON.stringify({
+                    currentStep: state.currentStep,
+                    answers: state.answers,
+                    multiSelects: state.multiSelects,
+                    timestamp: Date.now()
+                }));
+            } catch (e) {
+                console.warn('Impossible de sauvegarder la session:', e);
+            }
+        }
+
+        function restoreSession() {
+            try {
+                const saved = localStorage.getItem('quiz_state');
+                if (saved) {
+                    const data = JSON.parse(saved);
+                    // Restaurer seulement si moins de 24h
+                    if (Date.now() - data.timestamp < 24 * 60 * 60 * 1000) {
+                        state.answers = data.answers || {};
+                        state.multiSelects = data.multiSelects || {};
+                        // Pré-remplir les champs
+                        prefillFormFields();
+                    } else {
+                        localStorage.removeItem('quiz_state');
+                    }
+                }
+            } catch (e) {
+                console.warn('Impossible de restaurer la session:', e);
+            }
+        }
+
+        function prefillFormFields() {
+            // Pré-remplir les champs de formulaire
+            for (const [key, value] of Object.entries(state.answers)) {
+                const input = document.getElementById(key);
+                if (input && input.type !== 'checkbox') {
+                    input.value = value;
+                }
+            }
+        }
+
+        function clearSession() {
+            try {
+                localStorage.removeItem('quiz_state');
+            } catch (e) {
+                console.warn('Impossible de nettoyer la session:', e);
+            }
+        }
+
+        /*
+        ══════════════════════════════════════════════════════════════════════════════
+        NAVIGATION
+        ══════════════════════════════════════════════════════════════════════════════
+        */
+        
+        function startQuiz() {
+            state.startTime = Date.now();
+            trackEvent('quiz_start', {
+                quiz_id: CONFIG.quizId,
+                version: CONFIG.version,
+                device: getDeviceType()
+            });
+            goToStep(1);
+        }
+
+        function goToStep(stepIndex) {
+            // Cacher l'écran actuel
+            const currentScreen = document.getElementById('screen-' + SCREEN_ORDER[state.currentStep]);
+            if (currentScreen) {
+                currentScreen.classList.remove('active');
+            }
+
+            // Mettre à jour l'index
+            state.currentStep = stepIndex;
+
+            // Afficher le nouvel écran
+            const newScreen = document.getElementById('screen-' + SCREEN_ORDER[stepIndex]);
+            if (newScreen) {
+                newScreen.classList.add('active');
+                window.scrollTo(0, 0);
+            }
+
+            // Mettre à jour la barre de progression
+            updateProgressBar();
+
+            // Tracking
+            const screenName = SCREEN_ORDER[stepIndex];
+            if (screenName !== 'landing' && screenName !== 'calculating' && screenName !== 'results') {
+                trackEvent('step_view', {
+                    step_number: stepIndex,
+                    step_name: screenName
+                });
+            }
+
+            // Sauvegarder la session
+            saveSession();
+        }
+
+        function goToPrevStep() {
+            if (state.currentStep > 1) {
+                goToStep(state.currentStep - 1);
+            }
+        }
+
+        function goToNextStep() {
+            if (state.currentStep < SCREEN_ORDER.length - 1) {
+                goToStep(state.currentStep + 1);
+            }
+        }
+
+        function updateProgressBar() {
+            const totalSteps = SCREEN_ORDER.length - 3; // Exclure landing, calculating, results
+            const currentProgress = Math.max(0, state.currentStep - 1);
+            const percentage = Math.min(100, (currentProgress / totalSteps) * 100);
+            
+            const progressBar = document.getElementById('progressBar');
+            progressBar.style.width = percentage + '%';
+            progressBar.setAttribute('aria-valuenow', percentage);
+            
+            const progressText = document.getElementById('progress-text');
+            if (percentage === 0) {
+                progressText.textContent = 'Prêt à commencer';
+            } else if (percentage === 100) {
+                progressText.textContent = 'Terminé !';
+            } else {
+                progressText.textContent = Math.round(percentage) + '% complété';
+            }
+        }
+
+        /*
+        ══════════════════════════════════════════════════════════════════════════════
+        RÉPONSES AUX QUESTIONS
+        ══════════════════════════════════════════════════════════════════════════════
+        */
+        
+        function selectAnswer(questionId, answer) {
+            state.answers[questionId] = answer;
+            
+            trackEvent('answer_select', {
+                question_id: questionId,
+                answer: answer
+            });
+            
+            saveSession();
+            
+            // Aller automatiquement à l'étape suivante
+            setTimeout(() => goToNextStep(), 300);
+        }
+
+        function toggleMultiSelect(questionId, value, element, maxSelections) {
+            // Initialiser le tableau si nécessaire
+            if (!state.multiSelects[questionId]) {
+                state.multiSelects[questionId] = [];
+            }
+
+            const selections = state.multiSelects[questionId];
+            const index = selections.indexOf(value);
+
+            if (index > -1) {
+                // Désélectionner
+                selections.splice(index, 1);
+                element.classList.remove('selected');
+            } else {
+                // Sélectionner si pas au maximum
+                if (selections.length < maxSelections) {
+                    selections.push(value);
+                    element.classList.add('selected');
+                } else {
+                    // Afficher message d'erreur temporaire
+                    showTempMessage(`Maximum ${maxSelections} sélections`, 'error');
+                }
+            }
+
+            // Sauvegarder dans answers aussi (pour compatibilité)
+            state.answers[questionId] = selections;
+
+            trackEvent('answer_select', {
+                question_id: questionId,
+                answer: value,
+                is_selected: index === -1,
+                total_selected: selections.length
+            });
+
+            saveSession();
+        }
+
+        function showTempMessage(message, type) {
+            // Créer un message temporaire
+            const msg = document.createElement('div');
+            msg.className = `status-message visible ${type}`;
+            msg.textContent = message;
+            msg.style.position = 'fixed';
+            msg.style.top = '80px';
+            msg.style.left = '50%';
+            msg.style.transform = 'translateX(-50%)';
+            msg.style.zIndex = '9999';
+            document.body.appendChild(msg);
+            
+            setTimeout(() => {
+                msg.remove();
+            }, 2000);
+        }
+
+        /*
+        ══════════════════════════════════════════════════════════════════════════════
+        VALIDATION DES CHAMPS
+        ══════════════════════════════════════════════════════════════════════════════
+        */
+        
+        function validateAndNext(fieldType) {
+            let isValid = false;
+            
+            switch(fieldType) {
+                case 'age':
+                    isValid = validateAge();
+                    break;
+                case 'birthdate':
+                    isValid = validateBirthdate();
+                    break;
+                case 'measurements':
+                    isValid = validateMeasurements();
+                    break;
+                case 'objectives':
+                    isValid = validateMultiSelect('objectives');
+                    break;
+                case 'motivations':
+                    isValid = validateMultiSelect('motivations');
+                    break;
+                default:
+                    isValid = true;
+            }
+            
+            if (isValid) {
+                goToNextStep();
+            }
+        }
+
+        function validateAge() {
+            const input = document.getElementById('age');
+            const value = parseInt(input.value);
+            const error = document.getElementById('age-error');
+            
+            if (!value || value < 18 || value > 100) {
+                input.classList.add('error');
+                error.classList.add('visible');
+                return false;
+            }
+            
+            input.classList.remove('error');
+            error.classList.remove('visible');
+            state.answers.age = value;
+            saveSession();
+            return true;
+        }
+
+        function validateBirthdate() {
+            const input = document.getElementById('birthdate');
+            const value = input.value;
+            const error = document.getElementById('birthdate-error');
+            
+            if (!value) {
+                input.classList.add('error');
+                error.classList.add('visible');
+                return false;
+            }
+            
+            const birthDate = new Date(value);
+            const today = new Date();
+            const age = today.getFullYear() - birthDate.getFullYear();
+            
+            if (age < 18 || age > 100) {
+                input.classList.add('error');
+                error.classList.add('visible');
+                error.textContent = 'Vous devez avoir entre 18 et 100 ans';
+                return false;
+            }
+            
+            input.classList.remove('error');
+            error.classList.remove('visible');
+            state.answers.birthdate = value;
+            saveSession();
+            return true;
+        }
+
+        function validateMeasurements() {
+            const weight = document.getElementById('weight');
+            const height = document.getElementById('height');
+            const weightError = document.getElementById('weight-error');
+            const heightError = document.getElementById('height-error');
+            
+            let isValid = true;
+            
+            const weightValue = parseInt(weight.value);
+            if (!weightValue || weightValue < 30 || weightValue > 200) {
+                weight.classList.add('error');
+                weightError.classList.add('visible');
+                isValid = false;
+            } else {
+                weight.classList.remove('error');
+                weightError.classList.remove('visible');
+                state.answers.weight = weightValue;
+            }
+            
+            const heightValue = parseInt(height.value);
+            if (!heightValue || heightValue < 120 || heightValue > 230) {
+                height.classList.add('error');
+                heightError.classList.add('visible');
+                isValid = false;
+            } else {
+                height.classList.remove('error');
+                heightError.classList.remove('visible');
+                state.answers.height = heightValue;
+            }
+            
+            if (isValid) {
+                saveSession();
+            }
+            
+            return isValid;
+        }
+
+        function validateMultiSelect(questionId) {
+            const selections = state.multiSelects[questionId] || [];
+            const error = document.getElementById(questionId + '-error');
+            
+            if (selections.length === 0) {
+                error.classList.add('visible');
+                return false;
+            }
+            
+            error.classList.remove('visible');
+            return true;
+        }
+
+        /*
+        ══════════════════════════════════════════════════════════════════════════════
+        CALCUL IMC
+        ══════════════════════════════════════════════════════════════════════════════
+        */
+        
+        function calculateBMI() {
+            const weight = parseFloat(document.getElementById('weight').value);
+            const height = parseFloat(document.getElementById('height').value);
+            
+            if (weight && height && weight > 0 && height > 0) {
+                const heightM = height / 100;
+                const bmi = weight / (heightM * heightM);
+                
+                const bmiDisplay = document.getElementById('bmi-display');
+                const bmiValue = document.getElementById('bmi-value');
+                const bmiInterpretation = document.getElementById('bmi-interpretation');
+                
+                bmiValue.textContent = bmi.toFixed(1);
+                
+                let interpretation = '';
+                let color = '';
+                
+                if (bmi < 18.5) {
+                    interpretation = '⚠️ Insuffisance pondérale';
+                    color = '#FFA500';
+                } else if (bmi < 25) {
+                    interpretation = '✅ Poids normal';
+                    color = '#00CC00';
+                } else if (bmi < 30) {
+                    interpretation = '⚠️ Surpoids';
+                    color = '#FFA500';
+                } else {
+                    interpretation = '🚨 Obésité';
+                    color = '#FF4444';
+                }
+                
+                bmiInterpretation.textContent = interpretation;
+                bmiInterpretation.style.color = color;
+                bmiInterpretation.style.background = color + '20';
+                
+                bmiDisplay.classList.add('visible');
+                
+                state.answers.bmi = bmi.toFixed(1);
+            }
+        }
+
+        /*
+        ══════════════════════════════════════════════════════════════════════════════
+        SOUMISSION LEAD
+        ══════════════════════════════════════════════════════════════════════════════
+        */
+        
+        async function submitLead() {
+            // Valider les champs
+            const firstname = document.getElementById('firstname').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const consent = document.getElementById('consent').checked;
+            
+            const firstnameError = document.getElementById('firstname-error');
+            const emailError = document.getElementById('email-error');
+            const phoneError = document.getElementById('phone-error');
+            
+            let isValid = true;
+            
+            if (!firstname) {
+                document.getElementById('firstname').classList.add('error');
+                firstnameError.classList.add('visible');
+                isValid = false;
+            } else {
+                document.getElementById('firstname').classList.remove('error');
+                firstnameError.classList.remove('visible');
+            }
+            
+            if (!email || !validateEmail(email)) {
+                document.getElementById('email').classList.add('error');
+                emailError.classList.add('visible');
+                isValid = false;
+            } else {
+                document.getElementById('email').classList.remove('error');
+                emailError.classList.remove('visible');
+            }
+            
+            if (!phone || !validatePhone(phone)) {
+                document.getElementById('phone').classList.add('error');
+                phoneError.classList.add('visible');
+                isValid = false;
+            } else {
+                document.getElementById('phone').classList.remove('error');
+                phoneError.classList.remove('visible');
+            }
+            
+            if (!consent) {
+                showStatusMessage('Veuillez accepter de recevoir vos résultats', 'error');
+                isValid = false;
+            }
+            
+            if (!isValid) {
+                return;
+            }
+            
+            // Sauvegarder les infos lead
+            state.leadInfo = { firstname, email, phone };
+            
+            // Désactiver le bouton et afficher le chargement
+            const submitBtn = document.getElementById('submit-btn');
+            const originalText = submitBtn.textContent;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = 'ENVOI EN COURS... <span class="loading"></span>';
+            
+            // Tracker la soumission
+            trackEvent('lead_submit', {
+                quiz_id: CONFIG.quizId,
+                has_email: !!email,
+                has_phone: !!phone
+            });
+            
+            // Envoyer vers Google Sheets
+            const success = await sendToGoogleSheets();
+            
+            if (success) {
+                // Aller à l'écran de calcul
+                goToStep(SCREEN_ORDER.indexOf('calculating'));
+                startCalculating();
+            } else {
+                // Réactiver le bouton
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+                showStatusMessage('Erreur lors de l\'envoi. Réessayez dans quelques instants.', 'error');
+            }
+        }
+
+        function validateEmail(email) {
+            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return re.test(email);
+        }
+
+        function validatePhone(phone) {
+            // Format français simplifié
+            const cleaned = phone.replace(/\s/g, '');
+            const re = /^(?:(?:\+|00)33|0)[1-9](?:\d{8})$/;
+            return re.test(cleaned);
+        }
+
+        function showStatusMessage(message, type) {
+            const statusEl = document.getElementById('submit-status');
+            statusEl.textContent = message;
+            statusEl.className = `status-message visible ${type}`;
+            
+            setTimeout(() => {
+                statusEl.classList.remove('visible');
+            }, 5000);
+        }
+
+        /*
+        ══════════════════════════════════════════════════════════════════════════════
+        ENVOI VERS GOOGLE SHEETS
+        ══════════════════════════════════════════════════════════════════════════════
+        */
+        
+        async function sendToGoogleSheets(retryCount = 0) {
+            const payload = {
+                // Métadonnées
+                timestamp: new Date().toISOString(),
+                quiz_id: CONFIG.quizId,
+                version: CONFIG.version,
+                language: CONFIG.language,
+                submission_id: generateSubmissionId(),
+                
+                // Lead info
+                firstname: state.leadInfo.firstname,
+                email: state.leadInfo.email,
+                phone: state.leadInfo.phone,
+                
+                // Profil
+                gender: state.answers.gender || '',
+                age: state.answers.age || '',
+                birthdate: state.answers.birthdate || '',
+                weight: state.answers.weight || '',
+                height: state.answers.height || '',
+                bmi: state.answers.bmi || '',
+                
+                // Réponses
+                objectives: (state.multiSelects.objectives || []).join(', '),
+                energy_trend: state.answers.energy_trend || '',
+                last_peak: state.answers.last_peak || '',
+                energy_crash: state.answers.energy_crash || '',
+                sleep_quality: state.answers.sleep_quality || '',
+                night_wakeups: state.answers.night_wakeups || '',
+                stairs_test: state.answers.stairs_test || '',
+                sitting_hours: state.answers.sitting_hours || '',
+                sport_frequency: state.answers.sport_frequency || '',
+                stress_level: state.answers.stress_level || '',
+                breakfast: state.answers.breakfast || '',
+                hydration: state.answers.hydration || '',
+                alcohol: state.answers.alcohol || '',
+                social_relations: state.answers.social_relations || '',
+                projection_5years: state.answers.projection_5years || '',
+                motivations: (state.multiSelects.motivations || []).join(', '),
+                
+                // Scores (calculés)
+                score: calculateWeightedScore(),
+                biological_age: calculateBiologicalAge(),
+                
+                // UTM & tracking
+                ...state.utmParams,
+                device: getDeviceType(),
+                duration_seconds: state.startTime ? Math.round((Date.now() - state.startTime) / 1000) : 0
+            };
+            
+            try {
+                const response = await fetch(CONFIG.googleScriptUrl, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                console.log('Données envoyées avec succès', payload);
+                return true;
+                
+            } catch (error) {
+                console.error('Erreur envoi (tentative ' + (retryCount + 1) + '):', error);
+                
+                // Retry logic
+                if (retryCount < CONFIG.maxRetries) {
+                    await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
+                    return sendToGoogleSheets(retryCount + 1);
+                }
+                
+                return false;
+            }
+        }
+
+        function generateSubmissionId() {
+            return 'sub_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        }
+
+        /*
+        ══════════════════════════════════════════════════════════════════════════════
+        CALCUL DU SCORE PONDÉRÉ
+        ══════════════════════════════════════════════════════════════════════════════
+        */
+        
+        function calculateWeightedScore() {
+            let totalScore = 0;
+            let totalWeight = 0;
+            
+            // Définir les valeurs de score pour chaque réponse (0 = mauvais, 100 = excellent)
+            const scoringMatrix = {
+                energy_trend: {
+                    'Meilleur qu\'avant': 100,
+                    'Identique': 75,
+                    'Baisse légère (-20%)': 50,
+                    'Baisse importante (-40%)': 25,
+                    'Effondrement (-60%+)': 0
+                },
+                last_peak: {
+                    'Cette semaine': 100,
+                    'Ce mois-ci': 75,
+                    'Cette année': 50,
+                    'L\'année dernière': 25,
+                    'Je ne me souviens plus': 0
+                },
+                energy_crash: {
+                    'Jamais': 100,
+                    'Après 17h': 80,
+                    'Vers 14h-15h': 60,
+                    'Après le déjeuner': 40,
+                    'Dès le matin': 20
+                },
+                sleep_quality: {
+                    '7-9h de sommeil profond': 100,
+                    '6-7h correct': 70,
+                    '5-6h léger': 50,
+                    'Moins de 5h': 30,
+                    'Insomnie chronique': 0
+                },
+                night_wakeups: {
+                    '0 (sommeil continu)': 100,
+                    '1 fois': 75,
+                    '2-3 fois': 50,
+                    '4+ fois': 25,
+                    'Très fragmenté': 0
+                },
+                stairs_test: {
+                    'Facile, en parlant': 100,
+                    'Léger essoufflement': 75,
+                    'Besoin de reprendre mon souffle': 50,
+                    'Très difficile': 25,
+                    'J\'évite les escaliers': 0
+                },
+                sitting_hours: {
+                    'Moins de 4h': 100,
+                    '4-6h': 80,
+                    '6-8h': 60,
+                    '8-10h': 30,
+                    'Plus de 10h': 0
+                },
+                sport_frequency: {
+                    'Tous les jours': 100,
+                    '4-6 fois/semaine': 85,
+                    '2-3 fois/semaine': 65,
+                    '1 fois/semaine': 40,
+                    'Rarement ou jamais': 0
+                },
+                stress_level: {
+                    'Zen permanent': 100,
+                    'Gérable': 75,
+                    'Élevé régulièrement': 50,
+                    'Très élevé quotidien': 25,
+                    'Burnout / Mode survie': 0
+                },
+                breakfast: {
+                    'Jeûne intermittent': 100,
+                    'Protéines + bons gras': 100,
+                    'Céréales complètes + fruits': 70,
+                    'Pain blanc + confiture': 40,
+                    'Juste café ou rien': 60
+                },
+                hydration: {
+                    '2L+ d\'eau': 100,
+                    '1.5-2L': 85,
+                    '1-1.5L': 60,
+                    'Moins d\'1L': 30,
+                    'Surtout café/sodas': 10
+                },
+                alcohol: {
+                    'Jamais': 100,
+                    '1-3 verres': 80,
+                    '4-7 verres': 60,
+                    '8-14 verres': 30,
+                    '15+ verres': 0
+                },
+                social_relations: {
+                    'Très riches et nombreuses': 100,
+                    'Satisfaisantes': 75,
+                    'Limitées': 50,
+                    'Difficiles': 25,
+                    'Isolement social': 0
+                },
+                projection_5years: {
+                    'En meilleure forme': 100,
+                    'Stable': 70,
+                    'Légèrement diminué': 50,
+                    'Fortement diminué': 25,
+                    'J\'ai peur d\'y penser': 30
+                }
+            };
+            
+            // Calculer le score pondéré
+            for (const [key, value] of Object.entries(state.answers)) {
+                if (scoringMatrix[key] && scoringMatrix[key][value] !== undefined && CONFIG.weights[key]) {
+                    const rawScore = scoringMatrix[key][value];
+                    const weight = CONFIG.weights[key];
+                    
+                    totalScore += rawScore * weight;
+                    totalWeight += weight;
+                }
+            }
+            
+            // Ajustement IMC
+            const bmi = parseFloat(state.answers.bmi);
+            if (bmi) {
+                let bmiScore = 100;
+                if (bmi < 18.5) bmiScore = 60;
+                else if (bmi >= 25 && bmi < 30) bmiScore = 70;
+                else if (bmi >= 30) bmiScore = 40;
+                
+                totalScore += bmiScore * 5; // Poids modéré pour IMC
+                totalWeight += 5;
+            }
+            
+            // Bonus pour objectifs et motivations
+            if (state.multiSelects.objectives && state.multiSelects.objectives.length > 0) {
+                totalScore += 80 * CONFIG.weights.objectives;
+                totalWeight += CONFIG.weights.objectives;
+            }
+            
+            if (state.multiSelects.motivations && state.multiSelects.motivations.length > 0) {
+                totalScore += 80 * CONFIG.weights.motivations;
+                totalWeight += CONFIG.weights.motivations;
+            }
+            
+            // Calculer le score final (0-100)
+            const finalScore = totalWeight > 0 ? Math.round(totalScore / totalWeight) : 50;
+            
+            state.score = Math.max(0, Math.min(100, finalScore));
+            return state.score;
+        }
+
+        /*
+        ══════════════════════════════════════════════════════════════════════════════
+        CALCUL DE L'ÂGE BIOLOGIQUE
+        ══════════════════════════════════════════════════════════════════════════════
+        */
+        
+        function calculateBiologicalAge() {
+            const chronoAge = parseInt(state.answers.age) || 40;
+            const score = state.score;
+            
+            // Formule basée sur le score
+            let adjustment = 0;
+            
+            if (score >= 85) {
+                adjustment = -Math.round(chronoAge * 0.15); // -15%
+            } else if (score >= 70) {
+                adjustment = -Math.round(chronoAge * 0.05); // -5%
+            } else if (score >= 50) {
+                adjustment = 0;
+            } else if (score >= 35) {
+                adjustment = Math.round(chronoAge * 0.1); // +10%
+            } else {
+                adjustment = Math.round(chronoAge * 0.2); // +20%
+            }
+            
+            // Ajustements spécifiques
+            if (state.answers.stress_level === 'Burnout / Mode survie') adjustment += 3;
+            if (state.answers.sleep_quality === 'Insomnie chronique') adjustment += 3;
+            if (state.answers.sitting_hours === 'Plus de 10h') adjustment += 2;
+            if (state.answers.sport_frequency === 'Tous les jours') adjustment -= 2;
+            if (state.answers.alcohol === 'Jamais') adjustment -= 1;
+            
+            const bioAge = chronoAge + adjustment;
+            state.bioAge = Math.max(18, bioAge);
+            
+            return state.bioAge;
+        }
+
+        /*
+        ══════════════════════════════════════════════════════════════════════════════
+        ANIMATION CALCUL
+        ══════════════════════════════════════════════════════════════════════════════
+        */
+        
+        function startCalculating() {
+            // Animer le cercle
+            const circle = document.getElementById('calculating-circle');
+            circle.style.strokeDashoffset = '0';
+            circle.style.transition = 'stroke-dashoffset 3s ease-in-out';
+            
+            // Animer les étapes
+            setTimeout(() => {
+                document.getElementById('step1').style.opacity = '1';
+                document.getElementById('step1').style.transition = 'opacity 0.5s';
+            }, 500);
+            
+            setTimeout(() => {
+                document.getElementById('step2').style.opacity = '1';
+                document.getElementById('step2').style.transition = 'opacity 0.5s';
+            }, 1500);
+            
+            setTimeout(() => {
+                document.getElementById('step3').style.opacity = '1';
+                document.getElementById('step3').style.transition = 'opacity 0.5s';
+            }, 2500);
+            
+            // Calculer et afficher les résultats
+            setTimeout(() => {
+                displayResults();
+            }, 3500);
+        }
+
+        /*
+        ══════════════════════════════════════════════════════════════════════════════
+        AFFICHAGE DES RÉSULTATS
+        ══════════════════════════════════════════════════════════════════════════════
+        */
+        
+        function displayResults() {
+            // Aller à l'écran résultats
+            goToStep(SCREEN_ORDER.indexOf('results'));
+            
+            // Calculer les scores si pas déjà fait
+            if (!state.score) {
+                calculateWeightedScore();
+                calculateBiologicalAge();
+            }
+            
+            // Afficher le score avec animation
+            animateScore(state.score);
+            
+            // Afficher l'interprétation
+            displayScoreInterpretation(state.score);
+            
+            // Afficher l'âge biologique
+            displayBiologicalAge();
+            
+            // Afficher les forces
+            displayStrengths();
+            
+            // Afficher les risques
+            displayRisks();
+            
+            // Afficher les recommandations
+            displayRecommendations();
+            
+            // Afficher l'email
+            document.getElementById('userEmail').textContent = state.leadInfo.email;
+            
+            // Tracker l'affichage des résultats
+            trackEvent('result_view', {
+                score: state.score,
+                biological_age: state.bioAge,
+                chrono_age: state.answers.age
+            });
+        }
+
+        function animateScore(targetScore) {
+            const scoreEl = document.getElementById('finalScore');
+            const circle = document.getElementById('scoreCircle');
+            
+            // Animer le nombre
+            let current = 0;
+            const increment = targetScore / 50;
+            const timer = setInterval(() => {
+                current += increment;
+                if (current >= targetScore) {
+                    current = targetScore;
+                    clearInterval(timer);
+                }
+                scoreEl.textContent = Math.round(current);
+            }, 30);
+            
+            // Animer le cercle
+            const circumference = 2 * Math.PI * 80;
+            const offset = circumference - (targetScore / 100) * circumference;
+            circle.style.strokeDashoffset = offset;
+            circle.style.transition = 'stroke-dashoffset 2s ease-out';
+        }
+
+        function displayScoreInterpretation(score) {
+            const el = document.getElementById('scoreInterpretation');
+            
+            let level, emoji, description, color;
+            
+            if (score >= 80) {
+                level = 'OPTIMAL';
+                emoji = '🌟';
+                description = 'Performance biologique exceptionnelle';
+                color = '#00CC00';
+            } else if (score >= 65) {
+                level = 'BON';
+                emoji = '✅';
+                description = 'Santé préservée, optimisation possible';
+                color = '#8BC34A';
+            } else if (score >= 50) {
+                level = 'MOYEN';
+                emoji = '⚠️';
+                description = 'Signaux d\'alerte, action recommandée';
+                color = '#FFA500';
+            } else if (score >= 35) {
+                level = 'FAIBLE';
+                emoji = '🚨';
+                description = 'Vieillissement accéléré détecté';
+                color = '#FF6600';
+            } else {
+                level = 'CRITIQUE';
+                emoji = '🆘';
+                description = 'Urgence santé, intervention nécessaire';
+                color = '#FF0000';
+            }
+            
+            el.innerHTML = `
+                <div style="font-size: 48px; margin: 10px 0;">${emoji}</div>
+                <div style="font-size: 28px; font-weight: 900; color: ${color}; margin: 10px 0;">${level}</div>
+                <div style="font-size: 16px; color: var(--text-dark);">${description}</div>
+            `;
+        }
+
+        function displayBiologicalAge() {
+            const chronoAge = parseInt(state.answers.age);
+            const bioAge = state.bioAge;
+            const diff = bioAge - chronoAge;
+            
+            document.getElementById('chronoAge').textContent = chronoAge + ' ans';
+            document.getElementById('bioAge').textContent = bioAge + ' ans';
+            
+            const interpretEl = document.getElementById('ageInterpretation');
+            
+            if (diff <= -5) {
+                interpretEl.innerHTML = '🌟 <strong>Exceptionnel !</strong> Votre corps fonctionne comme celui de quelqu\'un de beaucoup plus jeune.';
+                interpretEl.style.color = '#00CC00';
+            } else if (diff <= -2) {
+                interpretEl.innerHTML = '✨ <strong>Excellent !</strong> Vous rajeunissez biologiquement.';
+                interpretEl.style.color = '#8BC34A';
+            } else if (diff <= 2) {
+                interpretEl.innerHTML = '✅ <strong>Bon !</strong> Vous maintenez votre âge biologique.';
+                interpretEl.style.color = '#4A90E2';
+            } else if (diff <= 5) {
+                interpretEl.innerHTML = '⚠️ <strong>Attention</strong>, vieillissement légèrement accéléré.';
+                interpretEl.style.color = '#FFA500';
+            } else {
+                interpretEl.innerHTML = '🚨 <strong>Alerte !</strong> Vieillissement prématuré détecté - Action urgente nécessaire.';
+                interpretEl.style.color = '#FF4444';
+            }
+        }
+
+        function displayStrengths() {
+            const strengths = [];
+            
+            // Analyser les points forts
+            if (state.answers.sport_frequency === 'Tous les jours' || state.answers.sport_frequency === '4-6 fois/semaine') {
+                strengths.push('💪 <strong>Activité physique régulière</strong> - Vous maintenez une excellente discipline sportive');
+            }
+            
+            if (state.answers.sleep_quality === '7-9h de sommeil profond') {
+                strengths.push('😴 <strong>Sommeil de qualité</strong> - Votre sommeil favorise la régénération optimale');
+            }
+            
+            if (state.answers.stress_level === 'Zen permanent' || state.answers.stress_level === 'Gérable') {
+                strengths.push('🧘 <strong>Gestion du stress</strong> - Vous savez préserver votre équilibre mental');
+            }
+            
+            if (state.answers.hydration === '2L+ d\'eau' || state.answers.hydration === '1.5-2L') {
+                strengths.push('💧 <strong>Bonne hydratation</strong> - Vous favorisez le bon fonctionnement cellulaire');
+            }
+            
+            if (state.answers.alcohol === 'Jamais' || state.answers.alcohol === '1-3 verres') {
+                strengths.push('🚫 <strong>Alcool maîtrisé</strong> - Vous protégez votre foie et votre longévité');
+            }
+            
+            if (state.answers.social_relations === 'Très riches et nombreuses' || state.answers.social_relations === 'Satisfaisantes') {
+                strengths.push('❤️ <strong>Vie sociale riche</strong> - Vos relations sont un facteur clé de longévité');
+            }
+            
+            if (state.answers.sitting_hours === 'Moins de 4h' || state.answers.sitting_hours === '4-6h') {
+                strengths.push('🚶 <strong>Mode de vie actif</strong> - Vous limitez la sédentarité dangereuse');
+            }
+            
+            // Si pas de points forts, encouragement
+            if (strengths.length === 0) {
+                strengths.push('💡 Vous êtes au bon endroit pour commencer votre transformation !');
+            }
+            
+            document.getElementById('strengthPoints').innerHTML = strengths.map(s => `<p style="margin: 10px 0; font-size: 14px;">${s}</p>`).join('');
+        }
+
+        function displayRisks() {
+            const risks = [];
+            
+            // Analyser les risques
+            if (state.answers.stress_level === 'Burnout / Mode survie' || state.answers.stress_level === 'Très élevé quotidien') {
+                risks.push('🚨 <strong>Stress chronique</strong> - Raccourcit vos télomères et accélère le vieillissement cellulaire (Epel et al., 2004)');
+            }
+            
+            if (state.answers.sitting_hours === 'Plus de 10h' || state.answers.sitting_hours === '8-10h') {
+                risks.push('💀 <strong>Sédentarité excessive</strong> - +52% de mortalité même avec du sport (Katzmarzyk et al., 2013)');
+            }
+            
+            if (state.answers.sleep_quality === 'Insomnie chronique' || state.answers.sleep_quality === 'Moins de 5h') {
+                risks.push('😴 <strong>Déficit de sommeil</strong> - Augmente fortement les risques cardiovasculaires et métaboliques');
+            }
+            
+            if (state.answers.sport_frequency === 'Rarement ou jamais' || state.answers.sport_frequency === '1 fois/semaine') {
+                risks.push('🛋️ <strong>Manque d\'activité</strong> - Vous perdez 3-7 ans d\'espérance de vie en bonne santé');
+            }
+            
+            if (state.answers.alcohol === '15+ verres' || state.answers.alcohol === '8-14 verres') {
+                risks.push('🍺 <strong>Alcool excessif</strong> - Risque cardiovasculaire et hépatique élevé');
+            }
+            
+            if (state.answers.social_relations === 'Isolement social' || state.answers.social_relations === 'Difficiles') {
+                risks.push('😔 <strong>Isolement social</strong> - Impact aussi négatif que 15 cigarettes/jour sur la mortalité');
+            }
+            
+            const bmi = parseFloat(state.answers.bmi);
+            if (bmi >= 30) {
+                risks.push('⚠️ <strong>IMC élevé</strong> - Risque métabolique et cardiovasculaire accru');
+            }
+            
+            if (state.answers.energy_trend === 'Effondrement (-60%+)' || state.answers.energy_trend === 'Baisse importante (-40%)') {
+                risks.push('⚡ <strong>Baisse d\'énergie</strong> - Signal précoce de dysfonctions métaboliques');
+            }
+            
+            // Si pas de risques majeurs
+            if (risks.length === 0) {
+                risks.push('✅ Aucun facteur de risque majeur détecté. Continuez sur cette voie !');
+            }
+            
+            document.getElementById('riskPoints').innerHTML = risks.map(r => `<p style="margin: 10px 0; font-size: 14px;">${r}</p>`).join('');
+        }
+
+        function displayRecommendations() {
+            const recommendations = [];
+            
+            // Générer des recommandations personnalisées basées sur les risques
+            if (state.answers.stress_level === 'Burnout / Mode survie' || state.answers.stress_level === 'Très élevé quotidien') {
+                const rec = CONFIG.recommendations.stress_high;
+                recommendations.push({
+                    title: rec.title,
+                    actions: rec.actions,
+                    priority: rec.priority
+                });
+            }
+            
+            if (state.answers.sleep_quality === 'Insomnie chronique' || state.answers.sleep_quality === 'Moins de 5h') {
+                const rec = CONFIG.recommendations.sleep_poor;
+                recommendations.push({
+                    title: rec.title,
+                    actions: rec.actions,
+                    priority: rec.priority
+                });
+            }
+            
+            if (state.answers.sitting_hours === 'Plus de 10h' || state.answers.sitting_hours === '8-10h') {
+                const rec = CONFIG.recommendations.sitting_excessive;
+                recommendations.push({
+                    title: rec.title,
+                    actions: rec.actions,
+                    priority: rec.priority
+                });
+            }
+            
+            if (state.answers.sport_frequency === 'Rarement ou jamais' || state.answers.sport_frequency === '1 fois/semaine') {
+                const rec = CONFIG.recommendations.activity_low;
+                recommendations.push({
+                    title: rec.title,
+                    actions: rec.actions,
+                    priority: rec.priority
+                });
+            }
+            
+            if (state.answers.breakfast === 'Pain blanc + confiture' || state.answers.hydration === 'Surtout café/sodas') {
+                const rec = CONFIG.recommendations.nutrition_poor;
+                recommendations.push({
+                    title: rec.title,
+                    actions: rec.actions,
+                    priority: rec.priority
+                });
+            }
+            
+            if (state.answers.social_relations === 'Isolement social' || state.answers.social_relations === 'Difficiles') {
+                const rec = CONFIG.recommendations.social_weak;
+                recommendations.push({
+                    title: rec.title,
+                    actions: rec.actions,
+                    priority: rec.priority
+                });
+            }
+            
+            // Trier par priorité
+            recommendations.sort((a, b) => {
+                const priority = { high: 3, medium: 2, low: 1 };
+                return priority[b.priority] - priority[a.priority];
+            });
+            
+            // Limiter à 5 recommandations max
+            const topRecommendations = recommendations.slice(0, 5);
+            
+            const html = topRecommendations.map((rec, index) => {
+                const priorityEmoji = rec.priority === 'high' ? '🔴' : '🟠';
+                return `
+                    <li>
+                        <strong>${priorityEmoji} ${index + 1}. ${rec.title}</strong><br>
+                        <ul style="margin-top: 5px; padding-left: 20px; list-style: disc;">
+                            ${rec.actions.map(action => `<li style="font-size: 13px; border: none; padding: 3px 0;">${action}</li>`).join('')}
+                        </ul>
+                    </li>
+                `;
+            }).join('');
+            
+            document.getElementById('recommendationsList').innerHTML = html || '<li>Continuez vos bonnes habitudes !</li>';
+        }
+
+        /*
+        ══════════════════════════════════════════════════════════════════════════════
+        CTA & CALENDLY
+        ══════════════════════════════════════════════════════════════════════════════
+        */
+        
+        function bookCall() {
+            // Ouvrir Calendly dans un nouvel onglet
+            window.open(CONFIG.calendlyUrl, '_blank');
+            
+            trackEvent('cta_click', {
+                cta_type: 'calendly',
+                score: state.score,
+                bio_age: state.bioAge
+            });
+        }
+
+        /*
+        ══════════════════════════════════════════════════════════════════════════════
+        TRACKING & ANALYTICS
+        ══════════════════════════════════════════════════════════════════════════════
+        */
+        
+        function trackEvent(eventName, parameters = {}) {
+            // Enrichir avec des données communes
+            const enrichedParams = {
+                ...parameters,
+                quiz_id: CONFIG.quizId,
+                version: CONFIG.version,
+                language: CONFIG.language,
+                device: getDeviceType(),
+                ...state.utmParams
+            };
+            
+            // Google Analytics 4
+            if (typeof gtag !== 'undefined') {
+                gtag('event', eventName, enrichedParams);
+            }
+            
+            // Facebook Pixel
+            if (typeof fbq !== 'undefined') {
+                fbq('trackCustom', eventName, enrichedParams);
+            }
+            
+            // DataLayer (GTM)
+            window.dataLayer = window.dataLayer || [];
+            window.dataLayer.push({
+                event: eventName,
+                ...enrichedParams
+            });
+            
+            // Console pour debug
+            console.log('📊 Event:', eventName, enrichedParams);
+        }
+
+        function getDeviceType() {
+            const ua = navigator.userAgent;
+            if (/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(ua)) {
+                return 'tablet';
+            }
+            if (/Mobile|Android|iP(hone|od)|IEMobile|BlackBerry|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/.test(ua)) {
+                return 'mobile';
+            }
+            return 'desktop';
+        }
+
+        /*
+        ══════════════════════════════════════════════════════════════════════════════
+        GESTION DES ÉVÉNEMENTS GLOBAUX
+        ══════════════════════════════════════════════════════════════════════════════
+        */
+        
+        // Prévenir la perte de données
+        window.addEventListener('beforeunload', function(e) {
+            if (state.currentStep > 0 && state.currentStep < SCREEN_ORDER.indexOf('results')) {
+                e.preventDefault();
+                e.returnValue = '';
+                
+                trackEvent('quiz_abandon', {
+                    step_number: state.currentStep,
+                    step_name: SCREEN_ORDER[state.currentStep],
+                    completion_percentage: Math.round((state.currentStep / SCREEN_ORDER.length) * 100)
+                });
+            }
+        });
+
+        // Tracking de la visibilité (abandon)
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden && state.currentStep > 0 && state.currentStep < SCREEN_ORDER.indexOf('results')) {
+                trackEvent('quiz_hidden', {
+                    step_number: state.currentStep,
+                    step_name: SCREEN_ORDER[state.currentStep]
+                });
+            }
+        });
+    </script>
+
+    <!-- 
+    ══════════════════════════════════════════════════════════════════════════════
+    TRACKING TAGS - À ACTIVER SI NÉCESSAIRE
+    ══════════════════════════════════════════════════════════════════════════════
+    -->
+    
+    <!-- Google Analytics 4 -->
+    <!--
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-XXXXXXXXXX');
+    </script>
+    -->
+
+    <!-- Facebook Pixel -->
+    <!--
+    <script>
+        !function(f,b,e,v,n,t,s)
+        {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+        n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+        if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+        n.queue=[];t=b.createElement(e);t.async=!0;
+        t.src=v;s=b.getElementsByTagName(e)[0];
+        s.parentNode.insertBefore(t,s)}(window, document,'script',
+        'https://connect.facebook.net/en_US/fbevents.js');
+        fbq('init', 'XXXXXXXXXX');
+        fbq('track', 'PageView');
+    </script>
+    <noscript><img height="1" width="1" style="display:none"
+        src="https://www.facebook.com/tr?id=XXXXXXXXXX&ev=PageView&noscript=1"
+    /></noscript>
+    -->
+</body>
+</html>
