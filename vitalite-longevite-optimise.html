@@ -162,9 +162,9 @@
         .progress-track {
             position: relative;
             margin: 0 clamp(16px, 4vw, 32px) 16px;
-            height: 8px;
-            border-radius: 999px;
-            background: rgba(0, 3, 36, 0.08);
+            height: 4px;
+            border-radius: 4px;
+            background: #E0E0E0;
             overflow: hidden;
         }
 
@@ -172,9 +172,8 @@
             position: absolute;
             inset: 0;
             width: 0%;
-            background: linear-gradient(90deg, var(--primary-blue), var(--accent-green));
-            box-shadow: inset 0 0 12px rgba(1, 255, 0, 0.25);
-            transition: width 0.45s ease;
+            background: var(--primary-blue);
+            transition: width 0.3s ease;
         }
 
         .screen-container {
@@ -196,6 +195,15 @@
             overflow: hidden;
         }
 
+        .screen.landing {
+            background: #FFFFFF;
+            border-top: 4px solid var(--primary-blue);
+        }
+
+        .screen.landing::after {
+            display: none;
+        }
+
         .screen::after {
             content: "";
             position: absolute;
@@ -209,24 +217,16 @@
         }
 
         .screen.active {
-            display: block;
-            animation: fadeInUp 0.45s ease;
+            display: flex;
+            animation: fadeIn 0.3s ease-in;
         }
 
-        @supports (display: flex) {
-            .screen.active {
-                display: flex;
-            }
-        }
-
-        @keyframes fadeInUp {
+        @keyframes fadeIn {
             from {
                 opacity: 0;
-                transform: translateY(24px);
             }
             to {
                 opacity: 1;
-                transform: translateY(0);
             }
         }
 
@@ -311,7 +311,7 @@
             font-weight: 700;
             font-size: 16px;
             padding: 16px 28px;
-            transition: var(--transition);
+            transition: all 0.2s ease;
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -320,15 +320,20 @@
 
         .btn-primary {
             background: linear-gradient(140deg, var(--primary-blue), #06145C 45%, var(--accent-green));
-            color: white;
+            color: #FFFFFF;
             box-shadow: 0 22px 44px rgba(0, 3, 36, 0.18);
+            opacity: 1;
         }
 
         .btn-primary:hover,
         .btn-primary:focus-visible {
-            transform: translateY(-1px);
-            box-shadow: 0 28px 55px rgba(0, 3, 36, 0.24);
+            opacity: 0.8;
+            transform: translateY(-2px);
             outline: none;
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
         }
 
         .btn-secondary {
@@ -352,6 +357,20 @@
         .option-grid {
             display: grid;
             gap: 14px;
+        }
+
+        .question-img {
+            width: 100%;
+            border-radius: var(--border-radius-md);
+            overflow: hidden;
+            margin: 12px 0 4px;
+        }
+
+        .question-img img {
+            display: block;
+            width: 100%;
+            height: auto;
+            object-fit: cover;
         }
 
         .option-card {
@@ -959,8 +978,13 @@
                     joints: 0.08,
                     digestion: 0.10
                 },
+                scoreThresholds: {
+                    excellent: 80,
+                    good: 60,
+                    warning: 40
+                },
                 statLibrary: [
-                    {
+
                         title: '80 % des adultes européens manquent de magnésium, clé pour l’énergie cellulaire.',
                         source: 'Source : EFSA, 2022.'
                     },
@@ -980,8 +1004,9 @@
                         dimension: null,
                         section: 'profil',
                         sectionLabel: 'Profil',
-                        headline: 'Nous parlons à qui aujourd\'hui ?',
-                        description: 'Pour personnaliser votre diagnostic, sélectionnez l\'identité qui vous correspond le mieux.',
+                        headline: 'Nous parlons à qui aujourd'hui ?',
+                        description: 'Pour personnaliser votre diagnostic, sélectionnez l'identité qui vous correspond le mieux.',
+                        img: 'https://images.unsplash.com/photo-1526256262350-7da7584cf5eb?auto=format&fit=crop&w=900&q=80',
                         options: [
                             { value: 'female', label: 'Femme', description: 'Je souhaite intégrer mes spécificités hormonales.', tone: 'Profil' },
                             { value: 'male', label: 'Homme', description: 'Je veux optimiser mes performances sur la durée.', tone: 'Profil' },
@@ -1614,7 +1639,7 @@
 
             function createInitialState() {
                 return {
-                    sessionId: generateUUID(),
+                    sessionId: getSessionId(),
                     hasStarted: false,
                     answers: {},
                     metrics: {},
@@ -1632,11 +1657,13 @@
                     risks: [],
                     profile: null,
                     recommendations: [],
+                    scoreByFactor: {},
                     highlightSignals: {},
                     utm: parseUTMParams(),
                     device: detectDeviceType(),
                     history: [],
-                    totalInteractiveSteps: TOTAL_INTERACTIVE_STEPS
+                    totalInteractiveSteps: TOTAL_INTERACTIVE_STEPS,
+                    isSubmitting: false
                 };
             }
 
@@ -1683,9 +1710,11 @@
                     state.risks = saved.risks || [];
                     state.profile = saved.profile || null;
                     state.recommendations = saved.recommendations || [];
+                    state.scoreByFactor = saved.scoreByFactor || {};
                     state.highlightSignals = saved.highlightSignals || {};
                     state.utm = Object.assign({}, state.utm, saved.utm || {});
                     state.resumed = !!saved.hasStarted;
+                    state.isSubmitting = false;
                     lastTrackedProgress = Math.round((state.progression.completedCount / state.totalInteractiveSteps) * 100);
                 } catch (error) {
                     console.warn('Impossible de charger la session précédente', error);
@@ -1709,6 +1738,7 @@
                         risks: state.risks,
                         profile: state.profile,
                         recommendations: state.recommendations,
+                        scoreByFactor: state.scoreByFactor,
                         highlightSignals: state.highlightSignals,
                         utm: state.utm,
                         timestamp: Date.now()
@@ -1883,6 +1913,16 @@
                 description.textContent = question.description || '';
 
                 section.append(eyebrow, title, description);
+
+                if (question.img) {
+                    const imageWrapper = document.createElement('div');
+                    imageWrapper.className = 'question-img';
+                    const image = document.createElement('img');
+                    image.src = question.img;
+                    image.alt = question.headline || '';
+                    imageWrapper.appendChild(image);
+                    section.appendChild(imageWrapper);
+                }
 
                 if (question.type === 'bmi') {
                     renderBmiQuestion(section, question);
@@ -2145,7 +2185,6 @@
                 `;
 
                 const form = section.querySelector('#lead-form');
-                const status = section.querySelector('#lead-status');
 
                 if (state.lead) {
                     if (state.lead.firstname) form.firstname.value = state.lead.firstname;
@@ -2157,154 +2196,8 @@
                     if (state.lead.consent) form.querySelector('#lead-consent').checked = true;
                 }
 
-                form.addEventListener('submit', async (event) => {
-                    event.preventDefault();
-                    if (state.isSubmitting) {
-                        return;
-                    }
-
-                    const formData = new FormData(form);
-                    const leadData = {
-                        firstname: formData.get('firstname')?.trim(),
-                        lastname: formData.get('lastname')?.trim(),
-                        email: formData.get('email')?.trim(),
-                        phone: formData.get('phone')?.trim(),
-                        birthdate: formData.get('birthdate'),
-                        language: formData.get('language') || CONFIG.meta.language,
-                        consent: form.querySelector('#lead-consent').checked
-                    };
-
-                    const errors = validateLead(leadData);
-                    if (errors.length) {
-                        status.textContent = errors.join(' · ');
-                        status.style.color = '#E94B3C';
-                        return;
-                    }
-
-                    state.isSubmitting = true;
-                    status.textContent = 'Analyse des données en cours…';
-                    status.style.color = 'var(--text-muted)';
-
-                    state.lead = leadData;
-                    markStepCompleted('lead');
-                    recomputeScores();
-                    persistState();
-
-                    trackEvent('lead_submit', {
-                        email: leadData.email,
-                        phone: leadData.phone,
-                        completionTimeMs: state.startedAt ? Date.now() - state.startedAt : null
-                    });
-
-                    goToScreenById('loading');
-
-                    const payload = buildPayload();
-                    const submission = await submitWithRetry(payload);
-
-                    await wait(1400);
-
-                    if (!submission.success) {
-                        state.isSubmitting = false;
-                        
-                        // Afficher un message d'erreur clair avec option de retry
-                        const errorMessage = submission.error?.message || 'Erreur de connexion';
-                        console.error('Erreur envoi:', errorMessage);
-                        
-                        // Créer un message d'erreur avec bouton retry
-                        const errorHtml = `
-                            <div style="text-align: center; padding: 20px;">
-                                <h3 style="color: #E94B3C; margin-bottom: 15px;">Erreur de connexion</h3>
-                                <p style="margin-bottom: 20px;">Impossible d'envoyer vos réponses. Voulez-vous réessayer ?</p>
-                                <button type="button" class="btn btn-primary" onclick="retrySubmission()">
-                                    Réessayer
-                                </button>
-                            </div>
-                        `;
-                        
-                        status.innerHTML = errorHtml;
-                        status.style.color = '#E94B3C';
-                        
-                        trackEvent('lead_submit_error', {
-                            message: errorMessage,
-                            attempt: 'retry_available'
-                        });
-                        
-                        // Garder les données en localStorage pour reprendre
-                        persistState();
-                        return;
-                    }
-
-                    state.isSubmitting = false;
-                    clearPersistedState();
-                    
-                    // Succès : logs et tracking
-                    console.log('Données envoyées avec succès - Affichage des résultats');
-                    trackEvent('result_view', {
-                        finalScore: state.finalScore,
-                        profile: state.profile?.name,
-                        completionTimeMs: state.startedAt ? Date.now() - state.startedAt : null
-                    });
-                    
-                    populateResultsScreen();
-                    goToScreenById('results');
-                });
+                form.addEventListener('submit', onClickFormSubmit);
             }
-
-            // Fonction globale pour retry de soumission
-            window.retrySubmission = async function() {
-                if (state.isSubmitting) return;
-                
-                state.isSubmitting = true;
-                const status = document.querySelector('#screen-lead .form-status');
-                if (status) {
-                    status.innerHTML = '<div class="spinner" style="margin: 0 auto;"></div><p style="text-align: center; margin-top: 10px;">Nouvelle tentative d\'envoi...</p>';
-                    status.style.color = 'var(--text-dark)';
-                }
-                
-                const payload = buildPayload();
-                const submission = await submitWithRetry(payload);
-                
-                await wait(1000);
-                
-                if (!submission.success) {
-                    state.isSubmitting = false;
-                    const errorMessage = submission.error?.message || 'Erreur de connexion';
-                    console.error('Erreur envoi (retry):', errorMessage);
-                    
-                    const errorHtml = `
-                        <div style="text-align: center; padding: 20px;">
-                            <h3 style="color: #E94B3C; margin-bottom: 15px;">Toujours une erreur</h3>
-                            <p style="margin-bottom: 20px;">La connexion échoue. Vérifiez votre internet ou réessayez plus tard.</p>
-                            <button type="button" class="btn btn-primary" onclick="retrySubmission()">
-                                    Réessayer encore
-                            </button>
-                        </div>
-                    `;
-                    
-                    status.innerHTML = errorHtml;
-                    status.style.color = '#E94B3C';
-                    
-                    trackEvent('lead_submit_error', {
-                        message: errorMessage,
-                        attempt: 'retry_failed'
-                    });
-                    return;
-                }
-                
-                // Succès du retry
-                state.isSubmitting = false;
-                clearPersistedState();
-                console.log('Données envoyées avec succès (retry) - Affichage des résultats');
-                trackEvent('result_view', {
-                    finalScore: state.finalScore,
-                    profile: state.profile?.name,
-                    completionTimeMs: state.startedAt ? Date.now() - state.startedAt : null,
-                    retry: true
-                });
-                
-                populateResultsScreen();
-                goToScreenById('results');
-            };
 
             function renderLoadingScreen(section) {
                 section.innerHTML = `
@@ -2371,6 +2264,7 @@
             function startQuiz() {
                 state.hasStarted = true;
                 state.startedAt = Date.now();
+                window.quizStartTime = state.startedAt;
                 state.currentScreenIndex = Math.max(1, getScreenIndexById('gender'));
                 state.currentScreenId = CONFIG.screenFlow[state.currentScreenIndex].id;
                 persistState();
@@ -2385,6 +2279,7 @@
                 if (!state.currentScreenIndex || state.currentScreenIndex === 0) {
                     state.currentScreenIndex = Math.max(1, getScreenIndexById('gender'));
                 }
+                window.quizStartTime = state.startedAt || Date.now();
                 showScreenByIndex(state.currentScreenIndex);
                 trackEvent('quiz_resume', {
                     resumedAtStep: state.currentScreenId
@@ -2520,19 +2415,34 @@
             }
 
             function goToScreenById(screenId) {
+                console.log('goToScreenById called with:', screenId);
                 if (!screenId) {
-                    console.warn('goToScreenById: screenId is undefined');
-                    goToNextStep();
-                    return;
+                    console.warn('Screen not found:', screenId);
+                    return goToNextStep();
                 }
-                
-                const index = getScreenIndexById(screenId);
-                if (index >= 0) {
-                    showScreenByIndex(index);
-                } else {
-                    console.warn(`goToScreenById: screen "${screenId}" not found, falling back to next step`);
-                    goToNextStep();
+
+                const normalizedId = screenId.startsWith('screen-') ? screenId.replace('screen-', '') : screenId;
+                const targetDomId = document.getElementById(screenId) ? screenId : `screen-${normalizedId}`;
+                const screens = document.querySelectorAll('.screen');
+                screens.forEach(s => s.classList.remove('active'));
+
+                const targetScreen = document.getElementById(targetDomId);
+                if (targetScreen) {
+                    const logicalId = targetScreen.dataset.screenId || normalizedId;
+                    const index = getScreenIndexById(logicalId);
+                    if (index >= 0) {
+                        showScreenByIndex(index);
+                    } else {
+                        targetScreen.classList.add('active');
+                        activeScreenRef = SCREEN_REFS.get(logicalId) || { element: targetScreen, config: { id: logicalId } };
+                    }
+                    window.scrollTo(0, 0);
+                    console.log('Navigated to screen:', logicalId);
+                    return true;
                 }
+
+                console.warn('Screen not found:', screenId);
+                return goToNextStep();
             }
 
             function showScreenByIndex(index) {
@@ -2813,16 +2723,9 @@
                     partialScores[dimension] = weight ? Math.round(total / weight) : null;
                 });
 
-                let weightedSum = 0;
-                let weightTotal = 0;
-                Object.entries(partialScores).forEach(([dimension, value]) => {
-                    if (typeof value === 'number') {
-                        const dimensionWeight = CONFIG.weights[dimension] || 1;
-                        weightedSum += value * dimensionWeight;
-                        weightTotal += dimensionWeight;
-                    }
-                });
-                const finalScore = weightTotal ? Math.round(weightedSum / weightTotal) : null;
+                state.partialScores = partialScores;
+
+                const { score: finalScore, factors: scoreByFactor } = calculateScore(state.answers);
 
                 const sortedDimensions = Object.entries(partialScores)
                     .filter(([, value]) => typeof value === 'number')
@@ -2832,10 +2735,10 @@
                 const risks = sortedDimensions.filter(([, value]) => value < 70).slice(0, 3);
 
                 const profile = determineProfile(finalScore, risks);
-                const recommendations = generateRecommendations(partialScores);
+                const recommendations = generateDetailedRecommendations(partialScores);
 
-                state.partialScores = partialScores;
                 state.finalScore = finalScore;
+                state.scoreByFactor = scoreByFactor;
                 state.strengths = strengths;
                 state.risks = risks;
                 state.profile = profile;
@@ -2844,7 +2747,7 @@
                 persistState();
             }
 
-            function generateRecommendations(partialScores) {
+            function generateDetailedRecommendations(partialScores) {
                 const recos = [];
                 CONFIG.recommendations.forEach(reco => {
                     const dimensionScore = partialScores[reco.dimension];
@@ -2878,27 +2781,127 @@
                 }
             }
 
+            function calculateScore(answers = {}) {
+                const weights = CONFIG.weights || {};
+                const dimensions = ['energy', 'sleep', 'stress', 'activity', 'nutrition', 'memory', 'joints', 'digestion'];
+                const factors = {};
+                let weightedSum = 0;
+                let weightTotal = 0;
+
+                dimensions.forEach(dimension => {
+                    const partial = state.partialScores?.[dimension];
+                    if (typeof partial === 'number') {
+                        const weight = weights[dimension] || 0;
+                        const normalized = clamp(partial / 100, 0, 1);
+                        factors[dimension] = normalized;
+                        weightedSum += partial * weight;
+                        weightTotal += weight;
+                    } else {
+                        factors[dimension] = getFallbackFactorScore(dimension, answers);
+                    }
+                });
+
+                let score = weightTotal ? Math.round(weightedSum / weightTotal) : 0;
+                score = Math.min(100, Math.max(0, score));
+                console.log('Score calculated:', score, 'Factors:', factors);
+                return { score, factors };
+            }
+
+            function getFallbackFactorScore(dimension, answers = {}) {
+                const fallbackMap = {
+                    energy: 'energy_dip',
+                    sleep: 'sleep_quality',
+                    stress: 'stress_level',
+                    activity: 'activity_level',
+                    nutrition: 'nutrition_breakfast',
+                    memory: 'social_support',
+                    joints: 'sitting_hours',
+                    digestion: 'water_intake'
+                };
+                const key = fallbackMap[dimension];
+                if (key && answers[key]) {
+                    return parseScore(answers[key]);
+                }
+                return null;
+            }
+
+            function parseScore(value) {
+                if (!value) return 0.5;
+                const scoreMap = {
+                    excellent: 1.0,
+                    'très_bon': 0.9,
+                    bon: 0.8,
+                    moyen: 0.6,
+                    mauvais: 0.3,
+                    'très_mauvais': 0.1,
+                    oui: 1.0,
+                    non: 0,
+                    parfois: 0.5,
+                    optimal: 1.0,
+                    normal: 0.7,
+                    faible: 0.3,
+                    critique: 0.1
+                };
+                const normalized = String(value).toLowerCase();
+                return scoreMap[normalized] ?? 0.5;
+            }
+
+            function getProfileFromScore(score) {
+                if (typeof score !== 'number') return 'INCONNU';
+                if (score >= CONFIG.scoreThresholds.excellent) return 'EXCELLENT';
+                if (score >= CONFIG.scoreThresholds.good) return 'BON';
+                if (score >= CONFIG.scoreThresholds.warning) return 'ATTENTION';
+                return 'CRITIQUE';
+            }
+
+            function generateRecommendations(scoreByFactor = {}) {
+                const recs = [];
+                const factorLabels = {
+                    energy: 'Énergie',
+                    sleep: 'Sommeil',
+                    stress: 'Stress',
+                    activity: 'Activité',
+                    nutrition: 'Nutrition',
+                    memory: 'Mémoire',
+                    joints: 'Articulations',
+                    digestion: 'Digestion'
+                };
+
+                Object.keys(scoreByFactor).forEach(factor => {
+                    const value = scoreByFactor[factor];
+                    if (typeof value === 'number' && value < 0.6) {
+                        recs.push({ factor: factorLabels[factor] || factor, text: 'À améliorer en priorité' });
+                    }
+                });
+
+                return recs.slice(0, 3);
+            }
+
             function determineProfile(finalScore, risks) {
-                if (!finalScore) {
+                if (typeof finalScore !== 'number') {
                     return { name: 'INCONNU', description: 'Score non calculable' };
                 }
-                
-                let name, description;
-                
-                if (finalScore >= 80) {
-                    name = 'EXCELLENT';
-                    description = 'Votre vitalité est excellente. Continuez vos bonnes habitudes !';
-                } else if (finalScore >= 60) {
-                    name = 'BON';
-                    description = 'Votre base est solide. Quelques ajustements peuvent faire la différence.';
-                } else if (finalScore >= 40) {
-                    name = 'ATTENTION';
-                    description = 'Des points de vigilance identifiés. Un plan d\'action ciblé est recommandé.';
-                } else {
-                    name = 'CRITIQUE';
-                    description = 'Une prise en charge prioritaire est nécessaire pour votre santé.';
+
+                const name = getProfileFromScore(finalScore);
+                let description;
+
+                switch (name) {
+                    case 'EXCELLENT':
+                        description = 'Votre vitalité est excellente. Continuez vos bonnes habitudes !';
+                        break;
+                    case 'BON':
+                        description = 'Votre base est solide. Quelques ajustements peuvent faire la différence.';
+                        break;
+                    case 'ATTENTION':
+                        description = 'Des points de vigilance identifiés. Un plan d\'action ciblé est recommandé.';
+                        break;
+                    case 'CRITIQUE':
+                        description = 'Une prise en charge prioritaire est nécessaire pour votre santé.';
+                        break;
+                    default:
+                        description = 'Score non calculable';
                 }
-                
+
                 return { name, description };
             }
 
@@ -3038,146 +3041,203 @@
 
             function buildPayload() {
                 const timestamp = new Date().toISOString();
-                const completionTime = state.startedAt ? Date.now() - state.startedAt : null;
-                const partialScores = state.partialScores || {};
-                
-                // Calculer l'âge exact si disponible
+                const sessionId = getSessionId();
+                state.sessionId = sessionId;
+
                 let ageExact = null;
-                if (state.lead.birthdate) {
-                    const birthDate = new Date(state.lead.birthdate);
+                const birthdate = state.lead?.birthdate;
+                if (birthdate) {
+                    const birthDate = new Date(birthdate);
                     const today = new Date();
-                    ageExact = today.getFullYear() - birthDate.getFullYear() - 
-                              ((today.getMonth() < birthDate.getMonth() || 
-                               (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate())) ? 1 : 0);
+                    ageExact = today.getFullYear() - birthDate.getFullYear() - ((today.getMonth() < birthDate.getMonth() || (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate())) ? 1 : 0);
                 }
 
+                const { score: scoreGlobal, factors: scoreByFactor } = calculateScore(state.answers);
+                state.scoreByFactor = scoreByFactor;
+
+                const completionStart = window.quizStartTime || state.startedAt || Date.now();
+                const completionTime = Math.max(0, Date.now() - completionStart);
+
                 const payload = {
-                    sessionId: state.sessionId,
-                    timestamp: timestamp,
-                    quizId: "vitalite-longevite-v1",
-                    quizVersion: "1.0",
-                    utm_source: state.utm?.utm_source || 'direct',
-                    utm_medium: state.utm?.utm_medium || 'none',
-                    utm_campaign: state.utm?.utm_campaign || 'quiz_vitalite',
-                    device: state.device || 'desktop',
-                    lang: 'fr',
-                    
-                    // Lead
+                    sessionId,
+                    timestamp,
+                    quizId: CONFIG.meta?.quizId || 'vitalite-longevite-v1',
+                    quizVersion: CONFIG.meta?.version || '1.0',
+                    utm_source: getUrlParam('utm_source') || state.utm?.utm_source || '',
+                    utm_medium: getUrlParam('utm_medium') || state.utm?.utm_medium || '',
+                    utm_campaign: getUrlParam('utm_campaign') || state.utm?.utm_campaign || '',
+                    device: /mobile/i.test(navigator.userAgent) ? 'mobile' : 'desktop',
+                    lang: CONFIG.meta?.language || 'fr',
+
                     firstname: state.lead?.firstname || '',
                     email: state.lead?.email || '',
                     phone: state.lead?.phone || '',
-                    dateOfBirth: state.lead?.birthdate || '',
-                    ageExact: ageExact,
-                    
-                    // Réponses détaillées
+                    dateOfBirth: birthdate || '',
+                    ageExact,
+
                     answers: state.answers || {},
-                    
-                    // IMC
-                    height: state.metrics?.height || 0,
-                    weight: state.metrics?.weight || 0,
-                    bmi: state.metrics?.bmi || 0,
-                    
-                    // Scoring
-                    scoreGlobal: state.finalScore || 0,
-                    profile: state.profile?.name || 'INCONNU',
-                    scoreByFactor: partialScores,
-                    recommendations: state.recommendations || [],
-                    
-                    // Session
-                    completionTime: completionTime || 0,
-                    completionPercent: getProgressPercent() || 0,
+                    height: state.metrics?.height ?? null,
+                    weight: state.metrics?.weight ?? null,
+                    bmi: state.metrics?.bmi ?? null,
+
+                    scoreGlobal,
+                    profile: getProfileFromScore(scoreGlobal),
+                    scoreByFactor,
+                    recommendations: generateRecommendations(scoreByFactor),
+
+                    completionTime,
+                    completionPercent: 100,
                     abandonedAtStep: null,
-                    
-                    // Consentement
-                    consentGiven: state.lead?.consent || false,
+
+                    consentGiven: !!state.lead?.consent,
                     consentTimestamp: state.lead?.consent ? timestamp : null
                 };
 
-                console.log('Payload built:', payload);
+                console.log('Final payload for Google Sheets:', payload);
                 return payload;
             }
 
-            async function submitWithRetry(payload) {
-                const maxAttempts = 3;
-                const baseDelay = 1000; // 1s, 2s, 4s comme demandé
-                
-                console.log('Début de la soumission avec retry:', payload);
-                
-                for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-                    try {
-                        console.log(`Tentative ${attempt}/${maxAttempts} d'envoi des données...`);
-                        await submitPayload(payload);
-                        console.log('Données envoyées avec succès !');
-                        return { success: true };
-                    } catch (error) {
-                        console.warn(`Tentative ${attempt} échouée:`, error.message);
-                        if (attempt === maxAttempts) {
-                            console.error('Échec de toutes les tentatives de soumission:', error);
-                            return { success: false, error };
-                        }
-                        const delay = baseDelay * Math.pow(2, attempt - 1); // 1s, 2s, 4s
-                        console.log(`Attente de ${delay}ms avant la prochaine tentative...`);
-                        await wait(delay);
-                    }
+            async function onClickFormSubmit(event) {
+                event.preventDefault();
+                if (state.isSubmitting) {
+                    return;
                 }
-                return { success: false };
-            }
 
-            async function submitPayload(payload) {
-                const controller = new AbortController();
-                const timeout = setTimeout(() => controller.abort(), 10000); // 10s max par tentative
-                
+                const status = document.getElementById('lead-status');
+                if (status) {
+                    status.textContent = '';
+                    status.style.color = 'var(--text-muted)';
+                }
+
+                const firstname = document.getElementById('lead-firstname')?.value?.trim() || '';
+                const lastname = document.getElementById('lead-lastname')?.value?.trim() || '';
+                const email = document.getElementById('lead-email')?.value?.trim() || '';
+                const phone = document.getElementById('lead-phone')?.value?.trim() || '';
+                const birthdate = document.getElementById('lead-birthdate')?.value || '';
+                const language = document.getElementById('lead-language')?.value || CONFIG.meta.language;
+                const consent = document.getElementById('lead-consent')?.checked || false;
+
+                const leadData = { firstname, lastname, email, phone, birthdate, language, consent };
+                const errors = validateLead(leadData);
+                if (errors.length) {
+                    if (status) {
+                        status.textContent = errors.join(' · ');
+                        status.style.color = '#E94B3C';
+                    }
+                    return;
+                }
+
+                state.isSubmitting = true;
+                if (status) {
+                    status.textContent = 'Analyse des données en cours…';
+                    status.style.color = 'var(--text-muted)';
+                }
+
+                state.lead = leadData;
+                markStepCompleted('lead');
+                recomputeScores();
+                persistState();
+
+                trackEvent('lead_submit', {
+                    email,
+                    phone,
+                    completionTimeMs: state.startedAt ? Date.now() - state.startedAt : null
+                });
+
                 try {
-                    console.log('Envoi vers Google Apps Script:', CONFIG.endpoints.googleScriptUrl);
-                    
-                    const response = await fetch(CONFIG.endpoints.googleScriptUrl, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(payload),
-                        signal: controller.signal
+                    const payload = buildPayload();
+                    await submitToGoogleSheets(payload);
+                    clearPersistedState();
+                    populateResultsScreen();
+                    trackEvent('result_view', {
+                        finalScore: state.finalScore,
+                        profile: state.profile?.name,
+                        completionTimeMs: state.startedAt ? Date.now() - state.startedAt : null
                     });
-                    
-                    console.log('Response received:', response);
-                    
-                    // En mode no-cors, on ne peut pas lire la réponse mais on considère que ça a réussi si pas d'erreur
-                    if (response.type === 'opaque') {
-                        console.log('Réponse opaque reçue (no-cors mode) - considéré comme succès');
-                    }
-                    
+                    goToScreenById('results');
                 } catch (error) {
-                    console.error('Erreur lors de la soumission:', error);
-                    if (error.name === 'AbortError') {
-                        throw new Error('Timeout: la requête a pris plus de 10 secondes');
+                    console.error('Submit error:', error);
+                    if (status) {
+                        status.textContent = 'Erreur de connexion. Merci de réessayer.';
+                        status.style.color = '#E94B3C';
                     }
-                    throw error;
+                    alert('Erreur connexion. Réessayer?');
                 } finally {
-                    clearTimeout(timeout);
+                    state.isSubmitting = false;
                 }
             }
 
-            function trackEvent(eventName, data = {}) {
-                const payload = Object.assign({
+            async function submitToGoogleSheets(payload) {
+                const APPS_SCRIPT_URL = CONFIG.endpoints?.googleScriptUrl || 'https://script.google.com/macros/s/AKfycbwjyAjH9Nl6y2IeRWHi5Qrr6ftqVilH4T9RMPAdNXM_XYVuaN0WFzrPPYwVL8oOZR0W/exec';
+                const maxRetries = 3;
+                let lastError;
+
+                for (let attempt = 1; attempt <= maxRetries; attempt += 1) {
+                    try {
+                        console.log(`[Attempt ${attempt}/${maxRetries}] Submitting payload to Google Sheets...`);
+                        console.log('Payload:', JSON.stringify(payload, null, 2));
+
+                        const response = await fetch(APPS_SCRIPT_URL, {
+                            method: 'POST',
+                            mode: 'no-cors',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+
+                        await new Promise(resolve => setTimeout(resolve, 500));
+
+                        console.log(`[Success on attempt ${attempt}] Response status:`, response.status);
+                        trackEvent('lead_submit_success', { attempt, score: payload.scoreGlobal });
+                        return { success: true, attempt };
+                    } catch (error) {
+                        lastError = error;
+                        console.error(`[Attempt ${attempt} failed]:`, error.message);
+
+                        if (attempt < maxRetries) {
+                            const backoff = Math.pow(2, attempt - 1) * 1000;
+                            console.log(`Retrying in ${backoff}ms...`);
+                            await new Promise(resolve => setTimeout(resolve, backoff));
+                        }
+                    }
+                }
+
+                console.error('All retries exhausted. Last error:', lastError);
+                trackEvent('lead_submit_failed', { retries: maxRetries, error: lastError?.message });
+                throw lastError;
+            }
+
+            function trackEvent(eventName, params = {}) {
+                const eventData = Object.assign({
                     event: eventName,
-                    quiz_id: CONFIG.meta.quizId,
-                    version: CONFIG.meta.version,
-                    session_id: state.sessionId,
                     timestamp: new Date().toISOString(),
-                    device: state.device,
-                    lang: CONFIG.meta.language,
-                    screen_id: state.currentScreenId
-                }, state.utm, data);
+                    quiz_id: CONFIG.meta?.quizId,
+                    version: CONFIG.meta?.version,
+                    session_id: state?.sessionId,
+                    device: state?.device,
+                    lang: CONFIG.meta?.language,
+                    screen_id: state?.currentScreenId
+                }, state?.utm || {}, params);
+
+                console.log('[Track]', eventName, eventData);
+
+                if (typeof gtag === 'function') {
+                    gtag('event', eventName, params);
+                }
+
+                if (typeof window.fbq === 'function') {
+                    window.fbq('trackCustom', eventName, params);
+                }
 
                 if (Array.isArray(window.dataLayer)) {
-                    window.dataLayer.push(payload);
+                    window.dataLayer.push(eventData);
                 }
-                if (typeof window.fbq === 'function') {
-                    window.fbq('trackCustom', eventName, payload);
-                }
-                if (!Array.isArray(window.dataLayer)) {
-                    console.log('[trackEvent]', payload);
+
+                try {
+                    const events = JSON.parse(localStorage.getItem('quiz_events') || '[]');
+                    events.push(eventData);
+                    localStorage.setItem('quiz_events', JSON.stringify(events.slice(-20)));
+                } catch (error) {
+                    console.warn('trackEvent storage fallback error', error);
                 }
             }
 
@@ -3194,6 +3254,30 @@
                     toast.classList.remove('visible');
                     setTimeout(() => toast.remove(), 320);
                 }, 2600);
+            }
+
+            function getSessionId() {
+                try {
+                    let sessionId = sessionStorage.getItem('quiz_session_id');
+                    if (!sessionId) {
+                        sessionId = `session_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
+                        sessionStorage.setItem('quiz_session_id', sessionId);
+                    }
+                    return sessionId;
+                } catch (error) {
+                    console.warn('Session storage unavailable, generating fallback id', error);
+                    return state?.sessionId || generateUUID();
+                }
+            }
+
+            function getUrlParam(name) {
+                try {
+                    const params = new URLSearchParams(window.location.search);
+                    return params.get(name) || '';
+                } catch (error) {
+                    console.warn('Unable to read URL parameter', name, error);
+                    return '';
+                }
             }
 
             function parseUTMParams() {
@@ -3224,10 +3308,6 @@
                     const v = c === 'x' ? r : (r & 0x3 | 0x8);
                     return v.toString(16);
                 });
-            }
-
-            function wait(ms) {
-                return new Promise(resolve => setTimeout(resolve, ms));
             }
 
             function clamp(value, min, max) {
