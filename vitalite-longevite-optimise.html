@@ -927,11 +927,11 @@
                     storageTtlHours: 24
                 },
                 endpoints: {
-                    googleScriptUrl: 'https://script.google.com/macros/s/APP_SCRIPT_URL_A_REMPLACER/exec'
+                    googleScriptUrl: 'https://script.google.com/macros/s/AKfycbwjyAjH9Nl6y2IeRWHi5Qrr6ftqVilH4T9RMPAdNXM_XYVuaN0WFzrPPYwVL8oOZR0W/exec'
                 },
                 notifications: {
-                    emails: ['notifications@oralife.com'],
-                    subject: 'Nouvelle demande - Quiz Vitalité & Longévité'
+                    emails: ['franck@propulser.business'],
+                    subject: 'Nouveau lead: [FIRSTNAME] - Score [SCORE]/100'
                 },
                 cta: {
                     label: 'Réserver mon diagnostic offert',
@@ -944,16 +944,20 @@
                     activity: { id: 'activity', label: 'Activation physique' },
                     nutrition: { id: 'nutrition', label: 'Nutrition intelligente' },
                     energy: { id: 'energy', label: 'Énergie quotidienne' },
+                    memory: { id: 'memory', label: 'Mémoire & concentration' },
+                    joints: { id: 'joints', label: 'Santé articulaire' },
+                    digestion: { id: 'digestion', label: 'Digestion & transit' },
                     social: { id: 'social', label: 'Relations & mental' }
                 },
                 weights: {
-                    body: 9,
-                    sleep: 10,
-                    stress: 10,
-                    activity: 9,
-                    nutrition: 8,
-                    energy: 7,
-                    social: 6
+                    energy: 0.15,
+                    sleep: 0.18,
+                    stress: 0.12,
+                    activity: 0.14,
+                    nutrition: 0.13,
+                    memory: 0.10,
+                    joints: 0.08,
+                    digestion: 0.10
                 },
                 statLibrary: [
                     {
@@ -1464,6 +1468,45 @@
                             'Identifiez 2 partenaires d\'engagement et planifiez un point hebdo.',
                             'Rejoignez un cercle BetterMe (digital) pour accountability.',
                             'Intégrez un rituel gratitude-relation 1 fois/jour.'
+                        ]
+                    },
+                    {
+                        id: 'memory_boost',
+                        dimension: 'memory',
+                        threshold: 70,
+                        priority: 'medium',
+                        title: 'Stimuler votre mémoire et concentration',
+                        description: 'Des exercices cognitifs simples améliorent la plasticité cérébrale.',
+                        actions: [
+                            '5 minutes de neuro-exercices chaque matin (mots, chiffres, associations).',
+                            'Oméga-3 + antioxydants : noix, poissons gras, baies pour protéger vos neurones.',
+                            'Sommeil profond : priorisez 7-8h pour consolider la mémoire.'
+                        ]
+                    },
+                    {
+                        id: 'joints_health',
+                        dimension: 'joints',
+                        threshold: 75,
+                        priority: 'medium',
+                        title: 'Protéger vos articulations',
+                        description: 'La mobilité prévient l\'usure et maintient l\'autonomie.',
+                        actions: [
+                            'Étirements doux 5 min chaque matin pour lubrifier les articulations.',
+                            'Renforcement musculaire progressif pour protéger les articulations.',
+                            'Collagène + vitamine D : alimentation qui soutient le cartilage.'
+                        ]
+                    },
+                    {
+                        id: 'digestion_optimize',
+                        dimension: 'digestion',
+                        threshold: 70,
+                        priority: 'medium',
+                        title: 'Optimiser votre digestion',
+                        description: 'Un intestin sain = meilleure énergie et immunité.',
+                        actions: [
+                            'Manger lentement et mâcher 20 fois chaque bouchée.',
+                            'Probiotiques naturels : yaourts, kéfir, légumes fermentés.',
+                            'Hydratation entre les repas, pas pendant pour ne pas diluer les enzymes.'
                         ]
                     }
                 ]
@@ -2162,34 +2205,113 @@
 
                     if (!submission.success) {
                         state.isSubmitting = false;
-                        showToast('Oups, une erreur est survenue. Réessayez dans un instant.', 'error');
-                        trackEvent('lead_submit_error', {
-                            message: submission.error?.message || 'unknown_error'
-                        });
-                        showScreenById('lead');
-                        status.textContent = 'Impossible d\'envoyer vos réponses. Merci d\'essayer à nouveau.';
+                        
+                        // Afficher un message d'erreur clair avec option de retry
+                        const errorMessage = submission.error?.message || 'Erreur de connexion';
+                        console.error('Erreur envoi:', errorMessage);
+                        
+                        // Créer un message d'erreur avec bouton retry
+                        const errorHtml = `
+                            <div style="text-align: center; padding: 20px;">
+                                <h3 style="color: #E94B3C; margin-bottom: 15px;">Erreur de connexion</h3>
+                                <p style="margin-bottom: 20px;">Impossible d'envoyer vos réponses. Voulez-vous réessayer ?</p>
+                                <button type="button" class="btn btn-primary" onclick="retrySubmission()">
+                                    Réessayer
+                                </button>
+                            </div>
+                        `;
+                        
+                        status.innerHTML = errorHtml;
                         status.style.color = '#E94B3C';
+                        
+                        trackEvent('lead_submit_error', {
+                            message: errorMessage,
+                            attempt: 'retry_available'
+                        });
+                        
+                        // Garder les données en localStorage pour reprendre
+                        persistState();
                         return;
                     }
 
                     state.isSubmitting = false;
                     clearPersistedState();
-                    populateResultsScreen();
-                    goToScreenById('results');
+                    
+                    // Succès : logs et tracking
+                    console.log('Données envoyées avec succès - Affichage des résultats');
                     trackEvent('result_view', {
                         finalScore: state.finalScore,
                         profile: state.profile?.name,
                         completionTimeMs: state.startedAt ? Date.now() - state.startedAt : null
                     });
+                    
+                    populateResultsScreen();
+                    goToScreenById('results');
                 });
             }
+
+            // Fonction globale pour retry de soumission
+            window.retrySubmission = async function() {
+                if (state.isSubmitting) return;
+                
+                state.isSubmitting = true;
+                const status = document.querySelector('#screen-lead .form-status');
+                if (status) {
+                    status.innerHTML = '<div class="spinner" style="margin: 0 auto;"></div><p style="text-align: center; margin-top: 10px;">Nouvelle tentative d\'envoi...</p>';
+                    status.style.color = 'var(--text-dark)';
+                }
+                
+                const payload = buildPayload();
+                const submission = await submitWithRetry(payload);
+                
+                await wait(1000);
+                
+                if (!submission.success) {
+                    state.isSubmitting = false;
+                    const errorMessage = submission.error?.message || 'Erreur de connexion';
+                    console.error('Erreur envoi (retry):', errorMessage);
+                    
+                    const errorHtml = `
+                        <div style="text-align: center; padding: 20px;">
+                            <h3 style="color: #E94B3C; margin-bottom: 15px;">Toujours une erreur</h3>
+                            <p style="margin-bottom: 20px;">La connexion échoue. Vérifiez votre internet ou réessayez plus tard.</p>
+                            <button type="button" class="btn btn-primary" onclick="retrySubmission()">
+                                    Réessayer encore
+                            </button>
+                        </div>
+                    `;
+                    
+                    status.innerHTML = errorHtml;
+                    status.style.color = '#E94B3C';
+                    
+                    trackEvent('lead_submit_error', {
+                        message: errorMessage,
+                        attempt: 'retry_failed'
+                    });
+                    return;
+                }
+                
+                // Succès du retry
+                state.isSubmitting = false;
+                clearPersistedState();
+                console.log('Données envoyées avec succès (retry) - Affichage des résultats');
+                trackEvent('result_view', {
+                    finalScore: state.finalScore,
+                    profile: state.profile?.name,
+                    completionTimeMs: state.startedAt ? Date.now() - state.startedAt : null,
+                    retry: true
+                });
+                
+                populateResultsScreen();
+                goToScreenById('results');
+            };
 
             function renderLoadingScreen(section) {
                 section.innerHTML = `
                     <div class="loading-visual">
                         <div class="spinner" role="status" aria-label="Calcul en cours"></div>
-                        <h2>Nous générons votre plan sur mesure…</h2>
-                        <p>Analyse de vos habitudes, pondération scientifique et création de recommandations prioritaires.</p>
+                        <h2>Finalisation de votre plan personnalisé...</h2>
+                        <p>Vos réponses sont enregistrées et votre score est calculé.</p>
                     </div>
                 `;
             }
@@ -2395,6 +2517,22 @@
 
             function goToScreen(id) {
                 showScreenById(id);
+            }
+
+            function goToScreenById(screenId) {
+                if (!screenId) {
+                    console.warn('goToScreenById: screenId is undefined');
+                    goToNextStep();
+                    return;
+                }
+                
+                const index = getScreenIndexById(screenId);
+                if (index >= 0) {
+                    showScreenByIndex(index);
+                } else {
+                    console.warn(`goToScreenById: screen "${screenId}" not found, falling back to next step`);
+                    goToNextStep();
+                }
             }
 
             function showScreenByIndex(index) {
@@ -2742,15 +2880,26 @@
 
             function determineProfile(finalScore, risks) {
                 if (!finalScore) {
-                    return CONFIG.profiles.defaultMid;
+                    return { name: 'INCONNU', description: 'Score non calculable' };
                 }
-                if (!risks.length) {
-                    if (finalScore >= 80) return CONFIG.profiles.defaultHigh;
-                    if (finalScore >= 65) return CONFIG.profiles.defaultMid;
-                    return CONFIG.profiles.defaultLow;
+                
+                let name, description;
+                
+                if (finalScore >= 80) {
+                    name = 'EXCELLENT';
+                    description = 'Votre vitalité est excellente. Continuez vos bonnes habitudes !';
+                } else if (finalScore >= 60) {
+                    name = 'BON';
+                    description = 'Votre base est solide. Quelques ajustements peuvent faire la différence.';
+                } else if (finalScore >= 40) {
+                    name = 'ATTENTION';
+                    description = 'Des points de vigilance identifiés. Un plan d\'action ciblé est recommandé.';
+                } else {
+                    name = 'CRITIQUE';
+                    description = 'Une prise en charge prioritaire est nécessaire pour votre santé.';
                 }
-                const mainRisk = risks[0][0];
-                return CONFIG.profiles[mainRisk] || CONFIG.profiles.defaultMid;
+                
+                return { name, description };
             }
 
             function populateResultsScreen() {
@@ -2891,57 +3040,84 @@
                 const timestamp = new Date().toISOString();
                 const completionTime = state.startedAt ? Date.now() - state.startedAt : null;
                 const partialScores = state.partialScores || {};
+                
+                // Calculer l'âge exact si disponible
+                let ageExact = null;
+                if (state.lead.birthdate) {
+                    const birthDate = new Date(state.lead.birthdate);
+                    const today = new Date();
+                    ageExact = today.getFullYear() - birthDate.getFullYear() - 
+                              ((today.getMonth() < birthDate.getMonth() || 
+                               (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate())) ? 1 : 0);
+                }
 
                 const payload = {
-                    meta: {
-                        quiz_id: CONFIG.meta.quizId,
-                        version: CONFIG.meta.version,
-                        session_id: state.sessionId,
-                        timestamp,
-                        language: CONFIG.meta.language,
-                        brand: CONFIG.meta.brand
-                    },
-                    tracking: Object.assign({}, state.utm, {
-                        device: state.device,
-                        completion_time_ms: completionTime,
-                        started_at: state.startedAt ? new Date(state.startedAt).toISOString() : null
-                    }),
-                    lead: state.lead,
-                    answers: state.answers,
-                    metrics: state.metrics,
-                    scoring: {
-                        partial: partialScores,
-                        final: state.finalScore,
-                        profile: state.profile,
-                        strengths: state.strengths,
-                        risks: state.risks,
-                        recommendations: state.recommendations
-                    },
-                    progression: {
-                        total_steps: state.totalInteractiveSteps,
-                        completed_steps: state.progression.completedCount,
-                        completion_rate: getProgressPercent(),
-                        status: 'completed'
-                    },
-                    notifications: CONFIG.notifications,
-                    cta: CONFIG.cta
+                    sessionId: state.sessionId,
+                    timestamp: timestamp,
+                    quizId: "vitalite-longevite-v1",
+                    quizVersion: "1.0",
+                    utm_source: state.utm?.utm_source || 'direct',
+                    utm_medium: state.utm?.utm_medium || 'none',
+                    utm_campaign: state.utm?.utm_campaign || 'quiz_vitalite',
+                    device: state.device || 'desktop',
+                    lang: 'fr',
+                    
+                    // Lead
+                    firstname: state.lead?.firstname || '',
+                    email: state.lead?.email || '',
+                    phone: state.lead?.phone || '',
+                    dateOfBirth: state.lead?.birthdate || '',
+                    ageExact: ageExact,
+                    
+                    // Réponses détaillées
+                    answers: state.answers || {},
+                    
+                    // IMC
+                    height: state.metrics?.height || 0,
+                    weight: state.metrics?.weight || 0,
+                    bmi: state.metrics?.bmi || 0,
+                    
+                    // Scoring
+                    scoreGlobal: state.finalScore || 0,
+                    profile: state.profile?.name || 'INCONNU',
+                    scoreByFactor: partialScores,
+                    recommendations: state.recommendations || [],
+                    
+                    // Session
+                    completionTime: completionTime || 0,
+                    completionPercent: getProgressPercent() || 0,
+                    abandonedAtStep: null,
+                    
+                    // Consentement
+                    consentGiven: state.lead?.consent || false,
+                    consentTimestamp: state.lead?.consent ? timestamp : null
                 };
 
+                console.log('Payload built:', payload);
                 return payload;
             }
 
             async function submitWithRetry(payload) {
                 const maxAttempts = 3;
-                const baseDelay = 700;
+                const baseDelay = 1000; // 1s, 2s, 4s comme demandé
+                
+                console.log('Début de la soumission avec retry:', payload);
+                
                 for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
                     try {
+                        console.log(`Tentative ${attempt}/${maxAttempts} d'envoi des données...`);
                         await submitPayload(payload);
+                        console.log('Données envoyées avec succès !');
                         return { success: true };
                     } catch (error) {
+                        console.warn(`Tentative ${attempt} échouée:`, error.message);
                         if (attempt === maxAttempts) {
+                            console.error('Échec de toutes les tentatives de soumission:', error);
                             return { success: false, error };
                         }
-                        await wait(baseDelay * attempt);
+                        const delay = baseDelay * Math.pow(2, attempt - 1); // 1s, 2s, 4s
+                        console.log(`Attente de ${delay}ms avant la prochaine tentative...`);
+                        await wait(delay);
                     }
                 }
                 return { success: false };
@@ -2949,9 +3125,12 @@
 
             async function submitPayload(payload) {
                 const controller = new AbortController();
-                const timeout = setTimeout(() => controller.abort(), 10000);
+                const timeout = setTimeout(() => controller.abort(), 10000); // 10s max par tentative
+                
                 try {
-                    await fetch(CONFIG.endpoints.googleScriptUrl, {
+                    console.log('Envoi vers Google Apps Script:', CONFIG.endpoints.googleScriptUrl);
+                    
+                    const response = await fetch(CONFIG.endpoints.googleScriptUrl, {
                         method: 'POST',
                         mode: 'no-cors',
                         headers: {
@@ -2960,6 +3139,20 @@
                         body: JSON.stringify(payload),
                         signal: controller.signal
                     });
+                    
+                    console.log('Response received:', response);
+                    
+                    // En mode no-cors, on ne peut pas lire la réponse mais on considère que ça a réussi si pas d'erreur
+                    if (response.type === 'opaque') {
+                        console.log('Réponse opaque reçue (no-cors mode) - considéré comme succès');
+                    }
+                    
+                } catch (error) {
+                    console.error('Erreur lors de la soumission:', error);
+                    if (error.name === 'AbortError') {
+                        throw new Error('Timeout: la requête a pris plus de 10 secondes');
+                    }
+                    throw error;
                 } finally {
                     clearTimeout(timeout);
                 }
