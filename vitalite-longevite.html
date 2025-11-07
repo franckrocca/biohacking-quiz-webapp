@@ -247,9 +247,7 @@ Modifier CONFIG.calendlyUrl (ligne ~1398)
         .logo-text {
             font-size: 24px;
             font-weight: 900;
-            background: linear-gradient(135deg, var(--primary-blue) 0%, var(--accent-green) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: var(--primary-blue);
         }
 
         .progress-info {
@@ -265,9 +263,8 @@ Modifier CONFIG.calendlyUrl (ligne ~1398)
 
         .progress-bar {
             height: 100%;
-            background: linear-gradient(90deg, var(--primary-blue) 0%, var(--accent-green) 100%);
+            background: var(--primary-blue);
             transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 0 10px rgba(1, 255, 0, 0.3);
             width: 0%;
         }
 
@@ -320,9 +317,7 @@ Modifier CONFIG.calendlyUrl (ligne ~1398)
         .logo {
             font-size: 42px;
             font-weight: 900;
-            background: linear-gradient(135deg, var(--primary-blue) 0%, var(--accent-green) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: var(--primary-blue);
             margin-bottom: 30px;
             letter-spacing: -1px;
         }
@@ -342,7 +337,7 @@ Modifier CONFIG.calendlyUrl (ligne ~1398)
         }
 
         .hook {
-            background: linear-gradient(135deg, #FFE5E5 0%, #FFEDED 100%);
+            background: #FFF5F5;
             border-left: 4px solid var(--error-red);
             padding: 15px 20px;
             border-radius: 10px;
@@ -378,7 +373,7 @@ Modifier CONFIG.calendlyUrl (ligne ~1398)
 
         /* Boutons */
         .btn-primary {
-            background: linear-gradient(135deg, var(--primary-blue) 0%, #000850 100%);
+            background: var(--primary-blue);
             color: white;
             border: none;
             padding: 18px 40px;
@@ -387,7 +382,7 @@ Modifier CONFIG.calendlyUrl (ligne ~1398)
             border-radius: 50px;
             cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow: 0 10px 30px rgba(0, 3, 36, 0.3);
+            box-shadow: 0 5px 15px rgba(0, 3, 36, 0.15);
             letter-spacing: 0.5px;
             width: 100%;
         }
@@ -403,7 +398,7 @@ Modifier CONFIG.calendlyUrl (ligne ~1398)
         }
 
         .btn-green {
-            background: linear-gradient(135deg, var(--accent-green) 0%, #00CC00 100%);
+            background: var(--accent-green);
             color: var(--primary-blue);
             font-weight: 900;
         }
@@ -612,7 +607,7 @@ Modifier CONFIG.calendlyUrl (ligne ~1398)
 
         /* BMI Display */
         .bmi-card {
-            background: linear-gradient(135deg, #f0f0f0 0%, #e0e0e0 100%);
+            background: #F5F5F5;
             padding: 20px;
             border-radius: 15px;
             margin-top: 20px;
@@ -759,7 +754,7 @@ Modifier CONFIG.calendlyUrl (ligne ~1398)
 
         /* CTA Final */
         .final-cta {
-            background: linear-gradient(135deg, var(--primary-blue) 0%, #000850 100%);
+            background: var(--primary-blue);
             color: white;
             padding: 30px;
             border-radius: 20px;
@@ -784,6 +779,52 @@ Modifier CONFIG.calendlyUrl (ligne ~1398)
         .cta-button:hover {
             transform: scale(1.05);
             box-shadow: 0 10px 30px rgba(1, 255, 0, 0.3);
+        }
+
+        /* Intermediate engagement pages */
+        .engagement-page {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .engagement-page h2 {
+            font-size: 28px;
+            color: var(--primary-blue);
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+
+        .engagement-page p {
+            font-size: 16px;
+            color: var(--text-light);
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+
+        .stat-big {
+            font-size: 48px;
+            font-weight: 900;
+            color: var(--accent-green);
+            margin: 30px 0;
+        }
+
+        .engagement-btn {
+            background: var(--primary-blue);
+            color: white;
+            padding: 16px 40px;
+            font-size: 16px;
+            font-weight: 700;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            margin-top: 30px;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 3, 36, 0.15);
+        }
+
+        .engagement-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 3, 36, 0.25);
         }
 
         /* Loading states */
@@ -1024,6 +1065,17 @@ Modifier CONFIG.calendlyUrl (ligne ~1398)
             </div>
         </div>
 
+        <!-- ENGAGEMENT PAGE 1: Après Profil -->
+        <div id="screen-engagement1" class="screen" role="main">
+            <div class="card engagement-page">
+                <h2>Merci d'avoir partagé votre profil !</h2>
+                <p>Nous connaissons maintenant votre situation actuelle.<br/>Continuons pour découvrir où vous exceller.</p>
+                <button class="engagement-btn" onclick="goToNextStep()">
+                    Continuer l'analyse →
+                </button>
+            </div>
+        </div>
+
         <!-- Q6: NIVEAU D'ÉNERGIE -->
         <div id="screen-energy" class="screen" role="main">
             <div class="card">
@@ -1159,6 +1211,19 @@ Modifier CONFIG.calendlyUrl (ligne ~1398)
             </div>
         </div>
 
+        <!-- ENGAGEMENT PAGE 2: Après Stress / Santé Physique -->
+        <div id="screen-engagement2" class="screen" role="main">
+            <div class="card engagement-page">
+                <h2>Statistique choquante !</h2>
+                <div class="stat-big">90%</div>
+                <p>des adultes actifs avec les bons protocoles vivent significativement plus longtemps.</p>
+                <p>Vous progressez sur votre bien-être. Explorons maintenant votre alimentation et hydratation.</p>
+                <button class="engagement-btn" onclick="goToNextStep()">
+                    Continuer →
+                </button>
+            </div>
+        </div>
+
         <!-- Q15: ALIMENTATION -->
         <div id="screen-nutrition" class="screen" role="main">
             <div class="card">
@@ -1254,6 +1319,30 @@ Modifier CONFIG.calendlyUrl (ligne ~1398)
                     CONTINUER →
                 </button>
                 <button class="btn-back" onclick="goToPrevStep()">← Retour</button>
+            </div>
+        </div>
+
+        <!-- ENGAGEMENT PAGE 3: Validation avant Lead -->
+        <div id="screen-engagement3" class="screen" role="main">
+            <div class="card engagement-page">
+                <h2>Vos réponses sont complètes !</h2>
+                <p>Nous avons collecté tous les éléments essentiels pour analyser votre profil de vitalité.</p>
+                <p style="margin-top: 20px; color: var(--primary-blue); font-weight: 600;">Vos données vont générer un score personnalisé et un plan d'action adapté.</p>
+                <button class="engagement-btn" onclick="goToNextStep()">
+                    Continuer →
+                </button>
+            </div>
+        </div>
+
+        <!-- ENGAGEMENT PAGE 4: Epiphanie Finale avant Lead -->
+        <div id="screen-engagement4" class="screen" role="main">
+            <div class="card engagement-page">
+                <h2>Vous y êtes presque !</h2>
+                <p>Une dernière étape : renseignez votre email pour recevoir votre analyse détaillée et personnalisée.</p>
+                <p style="margin-top: 20px; color: var(--accent-green); font-weight: 700;">Vos recommandations vous attendent →</p>
+                <button class="engagement-btn" onclick="goToNextStep()">
+                    Finaliser →
+                </button>
             </div>
         </div>
 
@@ -1613,9 +1702,9 @@ Modifier CONFIG.calendlyUrl (ligne ~1398)
         // Définition de l'ordre des écrans
         const SCREEN_ORDER = [
             'landing', 'gender', 'age', 'birthdate', 'measurements', 'objectives',
-            'energy', 'peak', 'crash', 'sleep', 'wakeups', 'activity', 'sitting',
-            'sport', 'stress', 'nutrition', 'hydration', 'alcohol', 'social',
-            'projection', 'motivation', 'lead', 'calculating', 'results'
+            'engagement1', 'energy', 'peak', 'crash', 'sleep', 'wakeups', 'activity', 'sitting',
+            'sport', 'stress', 'engagement2', 'nutrition', 'hydration', 'alcohol', 'social',
+            'projection', 'motivation', 'engagement3', 'engagement4', 'lead', 'calculating', 'results'
         ];
 
         /*
@@ -2176,36 +2265,36 @@ Modifier CONFIG.calendlyUrl (ligne ~1398)
                 language: CONFIG.language,
                 submission_id: generateSubmissionId(),
                 
-                // Lead info
-                firstname: state.leadInfo.firstname,
-                email: state.leadInfo.email,
-                phone: state.leadInfo.phone,
+                // Lead info - ALWAYS have values, never undefined
+                firstname: state.leadInfo?.firstname || '—',
+                email: state.leadInfo?.email || '—',
+                phone: state.leadInfo?.phone || '—',
                 
                 // Profil
-                gender: state.answers.gender || '',
-                age: state.answers.age || '',
-                birthdate: state.answers.birthdate || '',
-                weight: state.answers.weight || '',
-                height: state.answers.height || '',
-                bmi: state.answers.bmi || '',
+                gender: state.answers.gender || '—',
+                age: state.answers.age || '—',
+                birthdate: state.answers.birthdate || '—',
+                weight: state.answers.weight || '—',
+                height: state.answers.height || '—',
+                bmi: state.answers.bmi || '—',
                 
                 // Réponses
-                objectives: (state.multiSelects.objectives || []).join(', '),
-                energy_trend: state.answers.energy_trend || '',
-                last_peak: state.answers.last_peak || '',
-                energy_crash: state.answers.energy_crash || '',
-                sleep_quality: state.answers.sleep_quality || '',
-                night_wakeups: state.answers.night_wakeups || '',
-                stairs_test: state.answers.stairs_test || '',
-                sitting_hours: state.answers.sitting_hours || '',
-                sport_frequency: state.answers.sport_frequency || '',
-                stress_level: state.answers.stress_level || '',
-                breakfast: state.answers.breakfast || '',
-                hydration: state.answers.hydration || '',
-                alcohol: state.answers.alcohol || '',
-                social_relations: state.answers.social_relations || '',
-                projection_5years: state.answers.projection_5years || '',
-                motivations: (state.multiSelects.motivations || []).join(', '),
+                objectives: (state.multiSelects.objectives || []).join(', ') || '—',
+                energy_trend: state.answers.energy_trend || '—',
+                last_peak: state.answers.last_peak || '—',
+                energy_crash: state.answers.energy_crash || '—',
+                sleep_quality: state.answers.sleep_quality || '—',
+                night_wakeups: state.answers.night_wakeups || '—',
+                stairs_test: state.answers.stairs_test || '—',
+                sitting_hours: state.answers.sitting_hours || '—',
+                sport_frequency: state.answers.sport_frequency || '—',
+                stress_level: state.answers.stress_level || '—',
+                breakfast: state.answers.breakfast || '—',
+                hydration: state.answers.hydration || '—',
+                alcohol: state.answers.alcohol || '—',
+                social_relations: state.answers.social_relations || '—',
+                projection_5years: state.answers.projection_5years || '—',
+                motivations: (state.multiSelects.motivations || []).join(', ') || '—',
                 
                 // Scores (calculés)
                 score: calculateWeightedScore(),
@@ -2507,7 +2596,7 @@ Modifier CONFIG.calendlyUrl (ligne ~1398)
             displayRecommendations();
             
             // Afficher l'email
-            document.getElementById('userEmail').textContent = state.leadInfo.email;
+            document.getElementById('userEmail').textContent = state.leadInfo?.email || 'votre@email.com';
             
             // Tracker l'affichage des résultats
             trackEvent('result_view', {
